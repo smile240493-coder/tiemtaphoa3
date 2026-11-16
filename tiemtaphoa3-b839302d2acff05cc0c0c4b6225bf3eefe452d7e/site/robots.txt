@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /quan-tri.html
-Sitemap: https://ten-mien-cua-ban.vercel.app/sitemap.xml
