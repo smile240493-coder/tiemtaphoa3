@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /quan-tri.html
+Sitemap: https://www.pundeptrai.top/sitemap.xml
