@@ -28,3 +28,7 @@ Giỏ hàng, đơn hàng và bản nháp lưu trong trình duyệt. Để nhận
 Hàm api/order.js gửi mỗi đơn về Telegram của chủ shop. Trên Vercel (Settings > Environment Variables) tạo 2 biến:
 TELEGRAM_BOT_TOKEN (mã bot từ @BotFather) và TELEGRAM_CHAT_ID (mã cuộc trò chuyện). Sau đó Redeploy.
 KHÔNG ghi token vào mã nguồn hay đưa lên GitHub.
+
+## Chatbot
+Nút "Chat với shop" ở góc trái dưới. Bot trả lời theo từ khóa và tìm sản phẩm trong data.js (không cần máy chủ, không tốn phí).
+Muốn sửa câu trả lời (giao hàng, bảo hành, thanh toán, địa chỉ...), mở js/app.js, tìm "const FAQ" và sửa nội dung trong ngoặc kép.
