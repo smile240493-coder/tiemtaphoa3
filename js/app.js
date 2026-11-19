@@ -1,6 +1,6 @@
 (()=>{
 "use strict";
-const ADMIN_PASS="haico123"; /* ĐỔI MẬT KHẨU NÀY trước khi triển khai */
+const ADMIN_PASS="haico234"; /* ĐỔI MẬT KHẨU NÀY trước khi triển khai */
 const K={u:"lh_users",ss:"lh_session",p:"lh_products",s:"lh_settings",c:"lh_cart",o:"lh_orders"};
 const D=window.SHOP||{settings:{},products:[]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
