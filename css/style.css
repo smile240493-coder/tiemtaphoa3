@@ -83,3 +83,5 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 .cb-qr{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-top:1px solid #e3eae0;background:#fff}.cb-qr button{flex:0 0 auto;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:99px;padding:4px 12px;font:inherit;font-size:.85rem;cursor:pointer}.cb-qr button:hover{background:var(--g2)}
 .cb-f{display:flex;gap:8px;padding:10px;border-top:1px solid #e3eae0;background:#fff}.cb-f input{flex:1}
 @media(max-width:760px){.fab{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
+
+.buy{width:100%}.m .btn.gold{color:#1b1b1b}
