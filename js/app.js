@@ -1,6 +1,6 @@
 (()=>{
 "use strict";
-const ADMIN_PASS="admin123"; /* ĐỔI MẬT KHẨU NÀY trước khi triển khai */
+const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"admin123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
 const K={u:"lh_users",ss:"lh_session",p:"lh_products",s:"lh_settings",c:"lh_cart",o:"lh_orders"};
 const D=window.SHOP||{settings:{},products:[]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -92,7 +92,7 @@ $$("[data-rm]",box).forEach(b=>b.onclick=()=>{delete C[b.dataset.rm];saveC();dra
 $("#of").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const btn=$("#ob");btn.disabled=true;btn.textContent="Đang gửi đơn…";
 const O=rd(K.o,[]),id="TI"+Date.now().toString().slice(-7),its=items.map(x=>x.p.name+" × "+x.n);
 O.unshift({id,uid:u0?u0.id:null,time:new Date().toLocaleString("vi-VN"),...f,total:tot,items:its});wr(K.o,O);
-let sent=false;try{const r=await fetch("/api/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its})});sent=r.ok}catch(x){}
+let sent=false;if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its})});sent=true}catch(x){}}
 C={};saveC();draw(id,sent)}};
 draw()}
 
@@ -112,6 +112,47 @@ const salt=[...crypto.getRandomValues(new Uint32Array(2))].join("-"),x={id:Date.
 U.push(x);if(!wr(K.u,U)){m.textContent="Không lưu được tài khoản.";return}localStorage.setItem(K.ss,x.id);location.href="index.html"}}
 if(page==="account"){const x=me();if(!x)location.replace("dang-nhap.html");else{const O=rd(K.o,[]).filter(o=>o.uid===x.id);
 $("#acc").innerHTML=`<h1>Xin chào, ${esc(x.name)}</h1><p class="muted">${esc(x.email)} · ${esc(x.phone)}</p><h2>Đơn hàng của tôi</h2>${O.length?`<div class="tw"><table><thead><tr><th>Mã đơn</th><th>Sản phẩm</th><th>Tổng</th></tr></thead><tbody>${O.map(o=>`<tr><td>${esc(o.id)}<br><small>${esc(o.time)}</small></td><td>${o.items.map(esc).join("<br>")}</td><td>${vnd(o.total)}</td></tr>`).join("")}</tbody></table></div>`:"<p>Bạn chưa có đơn hàng nào.</p>"}`}}
+
+/* Chatbot tư vấn (trả lời theo từ khóa, không cần máy chủ). Sửa nội dung trả lời ở mảng FAQ bên dưới. */
+if(page!=="admin"){
+const bare=t=>String(t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+const has=(n,ks)=>ks.some(k=>(" "+n+" ").includes(" "+k+" "));
+const FAQ=[
+[["giao hang","van chuyen","ship","phi giao","bao lau","nhan hang"],"Cửa hàng giao toàn quốc, thường 1–3 ngày. Miễn phí vận chuyển cho đơn từ 500.000₫."],
+[["bao hanh","doi tra","hoan tien","bi loi","hu hong"],"Sản phẩm được bảo hành 12 tháng. Lỗi do nhà sản xuất được đổi mới trong 30 ngày, bạn nhớ giữ lại hộp và hóa đơn nhé."],
+[["thanh toan","chuyen khoan","cod","tra tien"],"Bạn có thể thanh toán khi nhận hàng (COD) hoặc chuyển khoản. Nhân viên sẽ gọi xác nhận đơn trước khi giao."],
+[["dia chi","o dau","cua hang","gio mo","mo cua","may gio"],"Cửa hàng ở Thôn Tân Trà, xã Hương Đô. Mở cửa 8:00 – 21:00 mỗi ngày."],
+[["dat hang","mua hang","cach mua","gio hang"],"Cách đặt hàng: chọn sản phẩm, bấm \"Thêm vào giỏ\", vào Giỏ hàng, điền họ tên, số điện thoại, địa chỉ rồi bấm \"Đặt hàng\". Cửa hàng sẽ gọi xác nhận."],
+[["tai khoan","dang ky","dang nhap","mat khau"],"Bạn có thể đăng ký hoặc đăng nhập ở menu Tài khoản trên đầu trang để lưu thông tin và xem lại đơn hàng."]];
+const STOP=new Set("cho toi can mua gia bao nhieu la co khong shop ban minh xem tim ve cua cac nhung mot cai chiec nay do nao o san pham hoi".split(" "));
+const find=n=>{const ks=n.split(" ").filter(w=>w.length>1&&!STOP.has(w));if(!ks.length)return[];
+return P.map(p=>{const hw=bare(p.name+" "+p.cat+" "+p.desc).split(" ");return{p,s:ks.filter(k=>hw.some(w=>w.startsWith(k))).length}}).filter(x=>x.s).sort((a,b)=>b.s-a.s).slice(0,3).map(x=>x.p)};
+const row=p=>`<div class="cp"><div><strong>${esc(p.name)}</strong><br><span class="price">${vnd(p.price)}</span>${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sm sec" data-v="${p.id}">Xem</button><button class="btn sm" data-add="${p.id}">Thêm giỏ</button></div></div>`;
+const contact='<div class="qr"><a class="btn sm" href="tel:0989740300">📞 Gọi 0989 740 300</a><a class="btn sm zl" href="https://zalo.me/0989740300" target="_blank" rel="noopener">💬 Chat Zalo</a></div>';
+const reply=raw=>{const n=bare(raw),short=n.split(" ").length;
+if(has(n,["nhan vien","tu van","lien he","goi dien","sdt","so dien thoai","zalo","hotline","nguoi that"]))return "Bạn liên hệ nhân viên tại đây nhé:"+contact;
+if(has(n,["giam gia","khuyen mai","sale","flash sale","uu dai","re nhat"])){const s=P.filter(p=>p.old>p.price).slice(0,4);return s.length?"Các sản phẩm đang giảm giá:"+s.map(row).join("")+'<a href="san-pham.html?sale=1">Xem tất cả Flash Sale</a>':"Hiện chưa có chương trình giảm giá. Bạn theo dõi website để cập nhật nhé."}
+for(const [ks,t] of FAQ)if(has(n,ks))return t;
+if(short<=4&&has(n,["xin chao","chao","hello","hi","alo"]))return 'Chào bạn! Bạn muốn tìm sản phẩm gì ạ? Bạn có thể gõ tên sản phẩm, ví dụ "ốp lưng" hoặc "nồi chiên".';
+if(short<=4&&has(n,["noi bat","san pham","xem hang"])){const h=P.filter(p=>p.hot).slice(0,4);return "Một số sản phẩm nổi bật:"+h.map(row).join("")+'<a href="san-pham.html">Xem tất cả sản phẩm</a>'}
+const cat=catItems().map(c=>c.name).find(c=>{const b=bare(c);return n.includes(b)||(n.length>=6&&b.includes(n))});
+const list=cat?P.filter(p=>p.cat===cat).slice(0,4):find(n);
+if(list.length)return (cat?`Sản phẩm trong "${esc(cat)}":`:"Mình tìm thấy:")+list.map(row).join("")+`<a href="san-pham.html${cat?"?cat="+encodeURIComponent(cat):"?q="+encodeURIComponent(raw)}">Xem thêm trên trang sản phẩm</a>`;
+return "Mình chưa hiểu rõ câu hỏi. Bạn thử gõ tên sản phẩm, hoặc hỏi về giao hàng, bảo hành, thanh toán. Hoặc nhắn nhân viên:"+contact};
+const box=document.createElement("div");box.className="cb";
+box.innerHTML=`<button class="cb-open" aria-expanded="false" aria-controls="cb-panel">🤖 Chat với shop</button>
+<section class="cb-panel" id="cb-panel" role="dialog" aria-label="Trợ lý cửa hàng" hidden><div class="cb-h"><strong>Trợ lý Tiện Ích Store</strong><button class="cb-x" aria-label="Đóng">×</button></div><div class="cb-log" id="cb-log" role="log" aria-live="polite"></div>
+<div class="cb-qr">${["Sản phẩm nổi bật","Khuyến mãi","Giao hàng","Bảo hành","Nhân viên tư vấn"].map(q=>`<button data-q="${q}">${q}</button>`).join("")}</div>
+<form class="cb-f" id="cb-f"><input id="cb-in" placeholder="Nhập câu hỏi…" aria-label="Nhập câu hỏi" maxlength="200" autocomplete="off"><button class="btn sm">Gửi</button></form></section>`;
+document.body.append(box);
+const log=$("#cb-log",box),panel=$("#cb-panel",box),ob=$(".cb-open",box),inp=$("#cb-in",box);let started=false;
+const add=(c,h)=>{const d=document.createElement("div");d.className="m "+c;d.innerHTML=h;log.append(d);log.scrollTop=log.scrollHeight;return d};
+const ask=t=>{t=t.trim().slice(0,200);if(!t)return;add("u",esc(t));const w=add("b","…");setTimeout(()=>{w.innerHTML=reply(t);log.scrollTop=log.scrollHeight},450)};
+const toggle=o=>{panel.hidden=!o;ob.setAttribute("aria-expanded",String(o));if(o){if(!started){started=true;add("b","Xin chào! Mình là trợ lý của Tiện Ích Store. Mình có thể gợi ý sản phẩm, báo giá, giải đáp giao hàng và bảo hành.")}inp.focus()}};
+ob.onclick=()=>toggle(panel.hidden);$(".cb-x",box).onclick=()=>{toggle(false);ob.focus()};
+panel.addEventListener("keydown",e=>{if(e.key==="Escape"){toggle(false);ob.focus()}});
+$("#cb-f",box).onsubmit=e=>{e.preventDefault();ask(inp.value);inp.value=""};
+$$("[data-q]",box).forEach(b=>b.onclick=()=>ask(b.dataset.q))}
 /* Quản trị */
 if(page==="admin"){
 const A=$("#adm");let tab="p",w=null,ok=sessionStorage.getItem("lh_ok")==="1";
