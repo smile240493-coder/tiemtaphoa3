@@ -31,3 +31,6 @@ Dán link Apps Script (kết thúc bằng /exec) vào js/config.js, mục orderH
 ## Chatbot
 Nút "Chat với shop" ở góc trái dưới. Bot trả lời theo từ khóa và tìm sản phẩm trong data.js (không cần máy chủ, không tốn phí).
 Muốn sửa câu trả lời (giao hàng, bảo hành, thanh toán, địa chỉ...), mở js/app.js, tìm "const FAQ" và sửa nội dung trong ngoặc kép.
+
+## Mua ngay
+Mỗi sản phẩm có nút "Mua ngay": khách điền họ tên, số điện thoại, địa chỉ và đặt hàng luôn, không qua giỏ hàng. Đơn gửi về Google Sheets và Gmail như đơn từ giỏ hàng.
