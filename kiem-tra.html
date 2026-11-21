@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Kiểm tra nhận đơn</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:640px;margin:20px auto;padding:0 16px}li{margin:8px 0}.ok{color:#1a7f37}.no{color:#c62828;font-weight:600}button{font:inherit;padding:10px 18px;border:0;border-radius:8px;background:#2f5d44;color:#fff}</style></head>
+<body><h1>Kiểm tra nhận đơn</h1><ol id="r"><li>Đang kiểm tra…</li></ol>
+<p><button id="t">Gửi đơn thử</button></p><p id="o"></p>
+<script src="js/config.js"></script>
+<script>
+(async()=>{
+const L=[],add=(ok,t)=>L.push('<li class="'+(ok?'ok':'no')+'">'+(ok?'ĐẠT: ':'LỖI: ')+t+'</li>');
+const hook=(window.CFG&&CFG.orderHook)||"";
+add(!!hook,hook?'js/config.js có link nhận đơn (đuôi ...'+hook.slice(-6)+')':'js/config.js KHÔNG có link nhận đơn (orderHook trống hoặc thiếu file)');
+const get=async u=>{try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store'});return r.ok?await r.text():null}catch(e){return null}};
+const app=await get('js/app.js');
+add(app&&app.includes('ORDER_HOOK'),app?(app.includes('ORDER_HOOK')?'js/app.js là bản mới (có nhận đơn Google)':'js/app.js là bản CŨ, chưa có nhận đơn Google'):'không đọc được js/app.js');
+const cart=await get('gio-hang.html');
+add(cart&&cart.includes('js/config.js'),cart?(cart.includes('js/config.js')?'gio-hang.html có nạp config.js':'gio-hang.html là bản CŨ, thiếu dòng nạp config.js'):'không đọc được gio-hang.html');
+document.getElementById('r').innerHTML=L.join('');
+document.getElementById('t').onclick=async()=>{const o=document.getElementById('o');
+if(!hook){o.textContent='Chưa có link nhận đơn nên không gửi được.';return}
+o.textContent='Đang gửi…';
+try{await fetch(hook,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({id:'KIEMTRA',name:'Khach thu',phone:'0912345678',addr:'Dia chi thu',note:'',total:100000,items:['San pham thu x 1']})});
+o.textContent='Đã gửi, không có lỗi mạng. Hãy kiểm tra email và tab "Đơn hàng" trong Google Sheets (chờ vài giây).'}catch(e){o.textContent='Gửi thất bại (lỗi mạng hoặc bị chặn): '+e}};
+})();
+</script></body></html>
