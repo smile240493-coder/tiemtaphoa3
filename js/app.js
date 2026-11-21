@@ -42,19 +42,31 @@ const hw=$("#herowrap");if(hw&&S.heroBg){hw.style.backgroundImage=`url("${S.hero
 /* Thẻ sản phẩm + cửa sổ chi tiết */
 const imgs=p=>p.imgs||[];
 const card=p=>{const a=imgs(p)[0];return `<article class="card"><button class="lk pw" data-v="${p.id}" aria-label="Xem chi tiết ${esc(p.name)}">${a?`<img class="thumb" src="${esc(a)}" alt="${esc(p.name)}" loading="lazy" width="400" height="300">`:`<div class="thumb" style="background:hsl(${hue(p.name)} 32% 38%)">${esc(p.name[0])}</div>`}${p.video?'<span class="vb">Video</span>':""}${p.old>p.price?`<span class="sb">-${Math.round(100-p.price*100/p.old)}%</span>`:""}</button>
-<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small>${esc(p.desc)}</small><div class="price">${vnd(p.price)}${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div></div></article>`};
+<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small>${esc(p.desc)}</small><div class="price">${vnd(p.price)}${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div></div></article>`};
 const dlg=document.createElement("dialog");dlg.className="dlg";dlg.setAttribute("aria-label","Chi tiết sản phẩm");document.body.append(dlg);
 const open=id=>{const p=P.find(x=>x.id==id);if(!p)return;const im=imgs(p);
 dlg.innerHTML=`<div class="in"><div class="main" id="mm">${im[0]?`<img src="${esc(im[0])}" alt="${esc(p.name)}">`:""}${p.video&&!im[0]?media(p.video):""}</div>
 <div class="th">${im.map((x,i)=>`<img src="${esc(x)}" alt="Ảnh ${i+1}" data-g="${i}" class="${i?"":"on"}">`).join("")}${p.video&&im[0]?`<img src="${esc(im[0])}" alt="Xem video" data-vid="1" style="opacity:.6">`:""}</div>
 <div><small>${esc(p.cat)}</small><h2>${esc(p.name)}</h2><p>${esc(p.desc)}</p><div class="price">${vnd(p.price)}</div></div>
-<div class="acts"><button class="btn" data-add="${p.id}">Thêm vào giỏ</button><button class="btn sec" id="xc">Đóng</button></div></div>`;
+<button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn" data-add="${p.id}">Thêm vào giỏ</button><button class="btn sec" id="xc">Đóng</button></div></div>`;
 dlg.showModal();$("#xc",dlg).onclick=()=>dlg.close();
 $$("[data-g]",dlg).forEach(i=>i.onclick=()=>{$$("[data-g],[data-vid]",dlg).forEach(x=>x.classList.remove("on"));i.classList.add("on");$("#mm",dlg).innerHTML=`<img src="${esc(im[i.dataset.g])}" alt="${esc(p.name)}">`});
 const v=$("[data-vid]",dlg);if(v)v.onclick=()=>{$$("[data-g]",dlg).forEach(x=>x.classList.remove("on"));$("#mm",dlg).innerHTML=media(p.video)}};
 dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
 dlg.addEventListener("close",()=>{dlg.innerHTML=""});
-document.addEventListener("click",e=>{const v=e.target.closest("[data-v]");if(v){open(v.dataset.v);return}
+const buy=id=>{const p=P.find(x=>x.id==id);if(!p)return;const u=me();
+dlg.innerHTML=`<div class="in"><h2>Mua ngay</h2><div class="cp"><strong>${esc(p.name)}</strong><span class="price" id="bt">${vnd(p.price)}</span></div>
+<form id="qf" class="form"><label>Số lượng<input name="qty" type="number" min="1" max="99" value="1"></label><label>Họ tên<input name="name" required autocomplete="name" value="${esc(u?u.name:"")}"></label><label>Số điện thoại<input name="phone" type="tel" required pattern="0[0-9]{9}" title="Nhập số điện thoại 10 chữ số" autocomplete="tel" value="${esc(u?u.phone||"":"")}"></label><label>Địa chỉ nhận hàng<input name="addr" required autocomplete="street-address"></label><label>Ghi chú<textarea name="note" rows="2"></textarea></label><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><div class="acts"><button class="btn" id="qb">Đặt hàng ngay</button><button type="button" class="btn sec" id="qx">Hủy</button></div></form></div>`;
+if(!dlg.open)dlg.showModal();
+$("#qx",dlg).onclick=()=>dlg.close();
+$("[name=qty]",dlg).oninput=e=>{$("#bt",dlg).textContent=vnd(p.price*Math.max(1,Math.min(99,+e.target.value||1)))};
+$("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=p.price*q,oid="TI"+Date.now().toString().slice(-7),its=[p.name+" × "+q];
+const b=$("#qb",dlg);b.disabled=true;b.textContent="Đang gửi đơn…";
+const O=rd(K.o,[]);O.unshift({id:oid,uid:u?u.id:null,time:new Date().toLocaleString("vi-VN"),name:f.name,phone:f.phone,addr:f.addr,note:f.note,total:tot,items:its});wr(K.o,O);
+let sent=false;if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id:oid,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its})});sent=true}catch(x){}}
+dlg.innerHTML=`<div class="in"><div class="ok"><h2>Đặt hàng thành công</h2><p>Mã đơn <strong>${oid}</strong>. ${sent?"Chúng tôi sẽ gọi xác nhận trong vòng 2 giờ.":'Chưa gửi được thông báo tới cửa hàng, vui lòng <a href="tel:0989740300">gọi 0989 740 300</a> hoặc nhắn <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">Zalo</a> kèm mã đơn.'}</p></div><div class="acts"><button class="btn" id="qx">Đóng</button></div></div>`;
+$("#qx",dlg).onclick=()=>dlg.close()}};
+document.addEventListener("click",e=>{const v=e.target.closest("[data-v]");if(v){open(v.dataset.v);return}const y=e.target.closest("[data-buy]");if(y){buy(y.dataset.buy);return}
 const b=e.target.closest("[data-add]");if(!b)return;const id=b.dataset.add;C[id]=(C[id]||0)+1;saveC();b.textContent="Đã thêm";setTimeout(()=>b.textContent="Thêm vào giỏ",1200)});
 
 if(page==="home"){
@@ -127,7 +139,7 @@ const FAQ=[
 const STOP=new Set("cho toi can mua gia bao nhieu la co khong shop ban minh xem tim ve cua cac nhung mot cai chiec nay do nao o san pham hoi".split(" "));
 const find=n=>{const ks=n.split(" ").filter(w=>w.length>1&&!STOP.has(w));if(!ks.length)return[];
 return P.map(p=>{const hw=bare(p.name+" "+p.cat+" "+p.desc).split(" ");return{p,s:ks.filter(k=>hw.some(w=>w.startsWith(k))).length}}).filter(x=>x.s).sort((a,b)=>b.s-a.s).slice(0,3).map(x=>x.p)};
-const row=p=>`<div class="cp"><div><strong>${esc(p.name)}</strong><br><span class="price">${vnd(p.price)}</span>${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sm sec" data-v="${p.id}">Xem</button><button class="btn sm" data-add="${p.id}">Thêm giỏ</button></div></div>`;
+const row=p=>`<div class="cp"><div><strong>${esc(p.name)}</strong><br><span class="price">${vnd(p.price)}</span>${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sm sec" data-v="${p.id}">Xem</button><button class="btn sm" data-add="${p.id}">Thêm giỏ</button><button class="btn sm gold" data-buy="${p.id}">Mua ngay</button></div></div>`;
 const contact='<div class="qr"><a class="btn sm" href="tel:0989740300">📞 Gọi 0989 740 300</a><a class="btn sm zl" href="https://zalo.me/0989740300" target="_blank" rel="noopener">💬 Chat Zalo</a></div>';
 const reply=raw=>{const n=bare(raw),short=n.split(" ").length;
 if(has(n,["nhan vien","tu van","lien he","goi dien","sdt","so dien thoai","zalo","hotline","nguoi that"]))return "Bạn liên hệ nhân viên tại đây nhé:"+contact;
