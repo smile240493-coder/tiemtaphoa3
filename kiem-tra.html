@@ -13,6 +13,9 @@ add(!!hook,hook?'js/config.js có link nhận đơn (đuôi ...'+hook.slice(-6)+
 const get=async u=>{try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store'});return r.ok?await r.text():null}catch(e){return null}};
 const app=await get('js/app.js');
 add(app&&app.includes('ORDER_HOOK'),app?(app.includes('ORDER_HOOK')?'js/app.js là bản mới (có nhận đơn Google)':'js/app.js là bản CŨ, chưa có nhận đơn Google'):'không đọc được js/app.js');
+add(app&&app.includes('data-buy'),app?(app.includes('data-buy')?'js/app.js có nút Mua ngay':'js/app.js CHƯA có nút Mua ngay (đang là bản cũ)'):'không đọc được js/app.js');
+const css=await get('css/style.css');
+add(css&&css.includes('.buy{'),css?(css.includes('.buy{')?'css/style.css có kiểu nút Mua ngay':'css/style.css là bản CŨ'):'không đọc được css/style.css');
 const cart=await get('gio-hang.html');
 add(cart&&cart.includes('js/config.js'),cart?(cart.includes('js/config.js')?'gio-hang.html có nạp config.js':'gio-hang.html là bản CŨ, thiếu dòng nạp config.js'):'không đọc được gio-hang.html');
 document.getElementById('r').innerHTML=L.join('');
