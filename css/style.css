@@ -85,3 +85,7 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 @media(max-width:760px){.fab{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
 
 .buy{width:100%}.m .btn.gold{color:#1b1b1b}
+
+#count{scroll-margin-top:140px}.pg{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:28px 0 8px}
+.pg button{min-width:42px;height:42px;border:1px solid #bccabd;background:#fff;border-radius:10px;font:inherit;cursor:pointer;color:var(--ink);padding:0 12px}
+.pg button.on{background:var(--g);color:#fff;border-color:var(--g)}.pg button:disabled{opacity:.4;cursor:default}.pg span{align-self:center;color:var(--mut)}

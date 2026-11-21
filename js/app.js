@@ -83,10 +83,19 @@ const u=new URLSearchParams(location.search),q=$("#q"),c=$("#cat"),s=$("#sort");
 c.innerHTML='<option value="">Tất cả danh mục</option>'+catItems().map(y=>y.name).map(x=>`<option>${esc(x)}</option>`).join("");
 q.value=u.get("q")||"";const sale=u.get("sale");if(sale)$("h1").textContent="Flash Sale";c.value=u.get("cat")||"";
 const bare=t=>t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase();
-const draw=()=>{let r=P.filter(p=>(!sale||p.old>p.price)&&(!c.value||p.cat===c.value)&&(!q.value||bare(p.name+" "+p.desc).includes(bare(q.value))));
+const PER=(window.CFG&&+CFG.perPage)||12;let pg=Math.max(1,+u.get("page")||1);
+const draw=keep=>{let r=P.filter(p=>(!sale||p.old>p.price)&&(!c.value||p.cat===c.value)&&(!q.value||bare(p.name+" "+p.desc).includes(bare(q.value))));
 if(s.value)r.sort((a,b)=>s.value==="asc"?a.price-b.price:b.price-a.price);
-$("#count").textContent=r.length+" sản phẩm";$("#list").innerHTML=r.map(card).join("")||"<p>Không tìm thấy sản phẩm phù hợp. Hãy thử từ khóa khác.</p>"};
-[q,c,s].forEach(x=>x.addEventListener("input",draw));draw()}
+const pages=Math.max(1,Math.ceil(r.length/PER));if(!keep)pg=1;pg=Math.min(pg,pages);const from=(pg-1)*PER;
+$("#count").textContent=r.length?`${r.length} sản phẩm · Trang ${pg}/${pages}`:"0 sản phẩm";
+$("#list").innerHTML=r.slice(from,from+PER).map(card).join("")||"<p>Không tìm thấy sản phẩm phù hợp. Hãy thử từ khóa khác.</p>";
+const nu=new URLSearchParams();if(q.value)nu.set("q",q.value);if(c.value)nu.set("cat",c.value);if(sale)nu.set("sale",sale);if(pg>1)nu.set("page",pg);
+try{history.replaceState(null,"",location.pathname+(nu.toString()?"?"+nu:""))}catch(x){}
+const nav=$("#pg"),nums=[];for(let i=1;i<=pages;i++)if(i===1||i===pages||Math.abs(i-pg)<=1)nums.push(i);
+let h="";if(pages>1){h=`<button data-p="${pg-1}" ${pg===1?"disabled":""}>‹ Trước</button>`;let last=0;nums.forEach(i=>{if(i-last>1)h+="<span>…</span>";h+=`<button data-p="${i}" ${i===pg?'aria-current="page" class="on"':""}>${i}</button>`;last=i});h+=`<button data-p="${pg+1}" ${pg===pages?"disabled":""}>Sau ›</button>`}
+nav.innerHTML=h;
+$$("[data-p]",nav).forEach(b=>b.onclick=()=>{pg=+b.dataset.p;draw(true);$("#count").scrollIntoView({behavior:"smooth",block:"start"})})};
+[q,c,s].forEach(x=>x.addEventListener("input",()=>draw()));draw(true)}
 
 
 if(page==="cart"){
