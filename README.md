@@ -24,10 +24,9 @@ Giỏ hàng, đơn hàng và bản nháp lưu trong trình duyệt. Để nhận
 - Khách có thể đăng ký, đăng nhập (dang-nhap.html) và xem đơn của mình (tai-khoan.html).
 - LƯU Ý: tài khoản khách lưu trong trình duyệt (localStorage), chỉ dùng được trên chính thiết bị đã đăng ký. Muốn tài khoản dùng chung mọi thiết bị cần backend (Supabase Auth, Firebase Auth...).
 
-## Nhận đơn hàng qua Telegram
-Hàm api/order.js gửi mỗi đơn về Telegram của chủ shop. Trên Vercel (Settings > Environment Variables) tạo 2 biến:
-TELEGRAM_BOT_TOKEN (mã bot từ @BotFather) và TELEGRAM_CHAT_ID (mã cuộc trò chuyện). Sau đó Redeploy.
-KHÔNG ghi token vào mã nguồn hay đưa lên GitHub.
+## Nhận đơn hàng (Google Sheets + Gmail)
+Đơn hàng gửi về Google Apps Script của bạn: ghi vào Google Sheets và gửi email thông báo.
+Dán link Apps Script (kết thúc bằng /exec) vào js/config.js, mục orderHook. Mật khẩu quản trị cũng đặt ở js/config.js (adminPass).
 
 ## Chatbot
 Nút "Chat với shop" ở góc trái dưới. Bot trả lời theo từ khóa và tìm sản phẩm trong data.js (không cần máy chủ, không tốn phí).
