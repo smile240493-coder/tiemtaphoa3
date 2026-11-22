@@ -106,3 +106,5 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 
 .vr{display:grid;gap:8px}.chips2{display:flex;gap:8px;flex-wrap:wrap}
 .chip{border:1px solid #bccabd;background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer}.chip:hover{border-color:var(--g)}.chip.on{background:var(--g);color:#fff;border-color:var(--g)}
+
+.new{color:#e0412f}
