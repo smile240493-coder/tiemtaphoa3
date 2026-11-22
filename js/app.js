@@ -1,6 +1,6 @@
 (async()=>{
 "use strict";
-const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"admin123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
+const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"haico123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
 const K={u:"lh_users",ss:"lh_session",p:"lh_products",s:"lh_settings",c:"lh_cart",o:"lh_orders"};
 const D=window.SHOP||{settings:{},products:[]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
