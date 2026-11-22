@@ -1,6 +1,6 @@
 (async()=>{
 "use strict";
-const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"haico123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
+const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"admin123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
 const K={u:"lh_users",ss:"lh_session",p:"lh_products",s:"lh_settings",c:"lh_cart",o:"lh_orders"};
 const D=window.SHOP||{settings:{},products:[]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -11,7 +11,8 @@ const vnd=n=>new Intl.NumberFormat("vi-VN").format(n)+"₫";
 let P=D.products,S=D.settings||{},C=rd(K.c,{});
 const page=document.body.dataset.page;
 /* ===== Supabase (lưu sản phẩm, ảnh, đơn hàng trên mạng). Bỏ trống supabaseUrl/supabaseKey trong config.js để dùng data.js ===== */
-const SB={url:((window.CFG&&CFG.supabaseUrl)||"").replace(/\/+$/,""),key:(window.CFG&&CFG.supabaseKey)||""};SB.on=!!(SB.url&&SB.key);
+const origin=u=>{try{return new URL(u).origin}catch(e){return String(u||"").replace(/\/+$/,"")}};
+const SB={url:origin((window.CFG&&CFG.supabaseUrl)||""),key:(window.CFG&&CFG.supabaseKey)||""};SB.on=!!(SB.url&&SB.key);
 const ses=()=>rd("lh_sb",null);
 const token=async()=>{const s=ses();if(!s)return null;if(s.expires_at-60>Date.now()/1000)return s;
 try{const r=await fetch(SB.url+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});if(!r.ok)throw 0;const j=await r.json();
@@ -209,8 +210,8 @@ const save=async()=>{if(SB.on){try{await saveSettings()}catch(e){alert("Không l
 const dl=()=>{const b=new Blob(["window.SHOP="+JSON.stringify({settings:S,products:P},null,1)+";\n"],{type:"text/javascript"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="data.js";a.click()};
 const draw=async()=>{
 if(!ok&&SB.on){A.innerHTML=`<h1>Đăng nhập quản trị</h1><form id="lf" class="form" style="max-width:360px"><label>Email<input type="email" id="em" required autocomplete="username"></label><label>Mật khẩu<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn">Đăng nhập</button><p id="le" class="err" role="alert"></p></form>`;
-$("#lf").onsubmit=async e=>{e.preventDefault();$("#le").textContent="Đang đăng nhập…";try{const r=await fetch(SB.url+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({email:$("#em").value.trim(),password:$("#pw").value})});const j=await r.json();if(!r.ok)throw 0;
-wr("lh_sb",{access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+j.expires_in,email:j.user&&j.user.email});ok=true;OD=null;draw()}catch(x){$("#le").textContent="Email hoặc mật khẩu chưa đúng."}};return}
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#le").textContent="Đang đăng nhập…";try{const r=await fetch(SB.url+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({email:$("#em").value.trim(),password:$("#pw").value})});const j=await r.json().catch(()=>({}));if(!r.ok){const m=String(j.msg||j.error_description||j.message||j.error||r.status);throw new Error(/invalid login|invalid_credentials|invalid credentials/i.test(m)?"SAI":m)}
+wr("lh_sb",{access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+j.expires_in,email:j.user&&j.user.email});ok=true;OD=null;draw()}catch(x){$("#le").textContent=x instanceof TypeError?"Không kết nối được tới Supabase. Kiểm tra mạng và supabaseUrl trong config.js.":x.message==="SAI"?"Email hoặc mật khẩu chưa đúng.":"Không đăng nhập được. Mã lỗi: "+x.message}};return}
 if(!ok){A.innerHTML=`<h1>Đăng nhập quản trị</h1><form id="lf" class="form" style="max-width:360px"><label>Mật khẩu<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn">Đăng nhập</button><p id="le" class="err" role="alert"></p></form>`;
 $("#lf").onsubmit=e=>{e.preventDefault();if($("#pw").value===ADMIN_PASS){ok=true;sessionStorage.setItem("lh_ok","1");draw()}else $("#le").textContent="Mật khẩu chưa đúng."};return}
 const O=await getO();
