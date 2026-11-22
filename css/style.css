@@ -103,3 +103,6 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 .grid.list .thumb{height:100%;min-height:140px;aspect-ratio:auto}.grid.list .ds{-webkit-line-clamp:3}.grid.list .card .acts{flex-direction:row}
 
 .star{border:0;background:none;font-size:1.5rem;cursor:pointer;color:#b8c3b9;line-height:1;padding:2px 6px}.star.on{color:var(--gold)}
+
+.vr{display:grid;gap:8px}.chips2{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid #bccabd;background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer}.chip:hover{border-color:var(--g)}.chip.on{background:var(--g);color:#fff;border-color:var(--g)}

@@ -22,8 +22,8 @@ if(auth){const s=await token();if(!s)throw new Error("Phiên đăng nhập đã 
 const r=await fetch(SB.url+path,{method:o.method||"GET",headers:h,body:o.json?JSON.stringify(o.json):o.body});
 if(!r.ok){let t="";try{t=await r.text()}catch(e){}throw new Error("Lỗi "+r.status+": "+t.slice(0,160))}
 return (r.headers.get("content-type")||"").includes("json")?r.json():r.text()};
-const fromRow=r=>({id:r.id,name:r.name,cat:r.cat,price:+r.price,old:+r.old||0,desc:r.descr||"",video:r.video||"",imgs:Array.isArray(r.imgs)?r.imgs:[],hot:r.hot?1:0});
-const toRow=p=>({name:p.name,cat:p.cat,price:p.price,old:p.old||0,descr:p.desc||"",video:p.video||"",imgs:p.imgs||[],hot:!!p.hot});
+const fromRow=r=>({id:r.id,name:r.name,cat:r.cat,price:+r.price,old:+r.old||0,desc:r.descr||"",video:r.video||"",imgs:Array.isArray(r.imgs)?r.imgs:[],hot:r.hot?1:0,variants:(r.variants&&typeof r.variants==="object")?r.variants:{}});
+const toRow=p=>({name:p.name,cat:p.cat,price:p.price,old:p.old||0,descr:p.desc||"",video:p.video||"",imgs:p.imgs||[],hot:!!p.hot,variants:p.variants||{}});
 const loadRemote=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),4000);
 try{const [a,b]=await Promise.all([fetch(SB.url+"/rest/v1/products?select=*&order=created_at.desc",{headers:{apikey:SB.key},signal:c.signal}),fetch(SB.url+"/rest/v1/settings?select=value&key=eq.site",{headers:{apikey:SB.key},signal:c.signal})]);
 if(!a.ok||!b.ok)throw 0;const rows=await a.json(),st=await b.json();const out={products:rows.map(fromRow),settings:(st[0]&&st[0].value)||{}};wr("lh_remote",out);return out}catch(e){return rd("lh_remote",null)}finally{clearTimeout(t)}};
@@ -49,6 +49,10 @@ const me=()=>{const id=localStorage.getItem(K.ss);return rd(K.u,[]).find(x=>Stri
 const DEFAULT_CATS=[{name:"Phụ kiện điện thoại",icon:"📱"},{name:"Gia dụng",icon:"🍳"},{name:"Nhà cửa & đời sống",icon:"🏠"},{name:"Thú cưng",icon:"🐾"},{name:"Ô tô - Xe máy - Xe đạp",icon:"🛵"},{name:"Đồ chơi",icon:"🧸"}];
 const catItems=()=>{const r=(S.cats||DEFAULT_CATS).map(c=>({...c}));cats().forEach(n=>{if(!r.some(c=>c.name===n))r.push({name:n,icon:"🛍️"})});return r};
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+const vItems=p=>(p&&p.variants&&Array.isArray(p.variants.items))?p.variants.items:[];
+const vInfo=(p,i)=>{const it=vItems(p)[i];return it?{name:it.n,price:it.p>0?it.p:p.price}:null};
+const fromPrice=p=>{const pr=vItems(p).map(i=>i.p>0?i.p:p.price),mn=Math.min(...pr),mx=Math.max(...pr);return (mx>mn?"Từ ":"")+vnd(mn)};
+const parseV=t=>String(t||"").split("\n").map(l=>l.trim()).filter(Boolean).slice(0,30).map(l=>{const [n,p]=l.split("|").map(s=>s.trim());return{n:(n||"").slice(0,60),p:Math.max(0,parseInt(String(p||"").replace(/[^\d]/g,""))||0)}}).filter(i=>i.n);
 /* Header & footer */
 const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["lien-he.html","Liên hệ","contact"]];
 const cu=me();
@@ -71,32 +75,38 @@ const hw=$("#herowrap");if(hw&&S.heroBg){hw.style.backgroundImage=`url("${S.hero
 /* Thẻ sản phẩm + cửa sổ chi tiết */
 const imgs=p=>p.imgs||[];
 const card=p=>{const a=imgs(p)[0];return `<article class="card"><button class="lk pw" data-v="${p.id}" aria-label="Xem chi tiết ${esc(p.name)}">${a?`<img class="thumb" src="${esc(a)}" alt="${esc(p.name)}" loading="lazy" width="400" height="300">`:`<div class="thumb" style="background:hsl(${hue(p.name)} 32% 38%)">${esc(p.name[0])}</div>`}${p.video?'<span class="vb">Video</span>':""}${p.old>p.price?`<span class="sb">-${Math.round(100-p.price*100/p.old)}%</span>`:""}</button>
-<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small class="ds">${esc(p.desc)}</small><div class="price">${vnd(p.price)}${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div></div></article>`};
+<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small class="ds">${esc(p.desc)}</small><div class="price">${vItems(p).length?fromPrice(p):vnd(p.price)}${p.old>p.price&&!vItems(p).length?` <s class="old">${vnd(p.old)}</s>`:""}</div>${vItems(p).length?`<button class="btn gold buy" data-v="${p.id}">Chọn phân loại</button>`:`<button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div>`}</div></article>`};
 const dlg=document.createElement("dialog");dlg.className="dlg";dlg.setAttribute("aria-label","Chi tiết sản phẩm");document.body.append(dlg);
-const open=id=>{const p=P.find(x=>x.id==id);if(!p)return;const im=imgs(p);
+const open=id=>{const p=P.find(x=>x.id==id);if(!p)return;const im=imgs(p);dlg.dataset.pid=String(id);dlg.dataset.vi="";
 dlg.innerHTML=`<div class="in"><div class="main" id="mm">${im[0]?`<img src="${esc(im[0])}" alt="${esc(p.name)}">`:""}${p.video&&!im[0]?media(p.video):""}</div>
 <div class="th">${im.map((x,i)=>`<img src="${esc(x)}" alt="Ảnh ${i+1}" data-g="${i}" class="${i?"":"on"}">`).join("")}${p.video&&im[0]?`<img src="${esc(im[0])}" alt="Xem video" data-vid="1" style="opacity:.6">`:""}</div>
-<div><small>${esc(p.cat)}</small><h2>${esc(p.name)}</h2><p>${esc(p.desc)}</p><div class="price">${vnd(p.price)}</div></div>
+<div><small>${esc(p.cat)}</small><h2>${esc(p.name)}</h2><p>${esc(p.desc)}</p><div class="price" id="mp">${vItems(p).length?fromPrice(p):vnd(p.price)}</div></div>${vItems(p).length?`<div class="vr"><strong>${esc((p.variants&&p.variants.label)||"Phân loại")}</strong><div class="chips2">${vItems(p).map((it,i)=>`<button type="button" class="chip" data-vi="${i}">${esc(it.n)}${it.p>0?` · ${vnd(it.p)}`:""}</button>`).join("")}</div><small id="vmsg" class="err" role="alert"></small></div>`:""}
 <button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn" data-add="${p.id}">Thêm vào giỏ</button><button class="btn sec" id="xc">Đóng</button></div></div>`;
 dlg.showModal();$("#xc",dlg).onclick=()=>dlg.close();
 $$("[data-g]",dlg).forEach(i=>i.onclick=()=>{$$("[data-g],[data-vid]",dlg).forEach(x=>x.classList.remove("on"));i.classList.add("on");$("#mm",dlg).innerHTML=`<img src="${esc(im[i.dataset.g])}" alt="${esc(p.name)}">`});
 const v=$("[data-vid]",dlg);if(v)v.onclick=()=>{$$("[data-g]",dlg).forEach(x=>x.classList.remove("on"));$("#mm",dlg).innerHTML=media(p.video)}};
 dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
 dlg.addEventListener("close",()=>{dlg.innerHTML=""});
-const buy=id=>{const p=P.find(x=>x.id==id);if(!p)return;const u=me();
-dlg.innerHTML=`<div class="in"><h2>Mua ngay</h2><div class="cp"><strong>${esc(p.name)}</strong><span class="price" id="bt">${vnd(p.price)}</span></div>
+const buy=(id,vi=null)=>{const p=P.find(x=>String(x.id)===String(id));if(!p)return;const u=me(),vv=vi===null?null:vInfo(p,vi),unit=vv?vv.price:p.price,pname=vv?`${p.name} (${vv.name})`:p.name;
+dlg.innerHTML=`<div class="in"><h2>Mua ngay</h2><div class="cp"><strong>${esc(pname)}</strong><span class="price" id="bt">${vnd(unit)}</span></div>
 <form id="qf" class="form"><label>Số lượng<input name="qty" type="number" min="1" max="99" value="1"></label><label>Họ tên<input name="name" required autocomplete="name" value="${esc(u?u.name:"")}"></label><label>Số điện thoại<input name="phone" type="tel" required pattern="0[0-9]{9}" title="Nhập số điện thoại 10 chữ số" autocomplete="tel" value="${esc(u?u.phone||"":"")}"></label><label>Địa chỉ nhận hàng<input name="addr" required autocomplete="street-address"></label><label>Ghi chú<textarea name="note" rows="2"></textarea></label><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><div class="acts"><button class="btn" id="qb">Đặt hàng ngay</button><button type="button" class="btn sec" id="qx">Hủy</button></div></form></div>`;
 if(!dlg.open)dlg.showModal();
 $("#qx",dlg).onclick=()=>dlg.close();
-$("[name=qty]",dlg).oninput=e=>{$("#bt",dlg).textContent=vnd(p.price*Math.max(1,Math.min(99,+e.target.value||1)))};
-$("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=p.price*q,oid="TI"+Date.now().toString().slice(-7),its=[p.name+" × "+q];
+$("[name=qty]",dlg).oninput=e=>{$("#bt",dlg).textContent=vnd(unit*Math.max(1,Math.min(99,+e.target.value||1)))};
+$("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=unit*q,oid="TI"+Date.now().toString().slice(-7),its=[pname+" × "+q];
 const b=$("#qb",dlg);b.disabled=true;b.textContent="Đang gửi đơn…";
 const O=rd(K.o,[]);O.unshift({id:oid,uid:u?u.id:null,time:new Date().toLocaleString("vi-VN"),name:f.name,phone:f.phone,addr:f.addr,note:f.note,total:tot,items:its});wr(K.o,O);
 const sent=await sendOrder({id:oid,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
 dlg.innerHTML=`<div class="in"><div class="ok"><h2>Đặt hàng thành công</h2><p>Mã đơn <strong>${oid}</strong>. ${sent?"Chúng tôi sẽ gọi xác nhận trong vòng 2 giờ.":'Chưa gửi được thông báo tới cửa hàng, vui lòng <a href="tel:0989740300">gọi 0989 740 300</a> hoặc nhắn <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">Zalo</a> kèm mã đơn.'}</p></div><div class="acts"><button class="btn" id="qx">Đóng</button></div></div>`;
 $("#qx",dlg).onclick=()=>dlg.close()}};
-document.addEventListener("click",e=>{const v=e.target.closest("[data-v]");if(v){open(v.dataset.v);return}const y=e.target.closest("[data-buy]");if(y){buy(y.dataset.buy);return}
-const b=e.target.closest("[data-add]");if(!b)return;const id=b.dataset.add;C[id]=(C[id]||0)+1;saveC();b.textContent="Đã thêm";setTimeout(()=>b.textContent="Thêm vào giỏ",1200)});
+document.addEventListener("click",e=>{
+const ch=e.target.closest(".chip");if(ch){dlg.dataset.vi=ch.dataset.vi;$$(".chip",dlg).forEach(x=>x.classList.toggle("on",x===ch));const pp=P.find(x=>String(x.id)===dlg.dataset.pid),vv=pp&&vInfo(pp,+ch.dataset.vi);if(vv)$("#mp",dlg).textContent=vnd(vv.price);const m=$("#vmsg",dlg);if(m)m.textContent="";return}
+const v=e.target.closest("[data-v]");if(v){open(v.dataset.v);return}
+const pick=id=>{const p=P.find(x=>String(x.id)===String(id));if(!p)return null;if(!vItems(p).length)return{p,vi:null};
+const same=dlg.open&&dlg.dataset.pid===String(p.id);if(same&&dlg.dataset.vi!=="")return{p,vi:+dlg.dataset.vi};
+if(same){const m=$("#vmsg",dlg);if(m)m.textContent="Vui lòng chọn phân loại.";return null}open(p.id);return null};
+const y=e.target.closest("[data-buy]");if(y){const s=pick(y.dataset.buy);if(s)buy(s.p.id,s.vi);return}
+const b=e.target.closest("[data-add]");if(!b)return;const s=pick(b.dataset.add);if(!s)return;const k=s.vi===null?String(s.p.id):s.p.id+"|"+s.vi;C[k]=(C[k]||0)+1;saveC();b.textContent="Đã thêm";setTimeout(()=>b.textContent="Thêm vào giỏ",1200)});
 
 if(page==="home"){
 const bn=S.banners||[],el=$("#bn");
@@ -133,16 +143,16 @@ if(page==="cart"){
 const box=$("#cartbox");
 const draw=(done,sent)=>{const u0=me();
 if(done){box.innerHTML=`<div class="ok"><h2>Đặt hàng thành công</h2><p>Mã đơn <strong>${done}</strong>. ${sent===false?'Chưa gửi được thông báo tới cửa hàng, vui lòng <a href="tel:0989740300">gọi 0989 740 300</a> hoặc nhắn <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">Zalo</a> kèm mã đơn.':"Chúng tôi sẽ gọi xác nhận trong vòng 2 giờ."}</p><a class="btn" href="san-pham.html">Tiếp tục mua sắm</a></div>`;return}
-const items=Object.keys(C).map(id=>({p:P.find(x=>x.id==id),n:C[id]})).filter(x=>x.p);
+const items=Object.keys(C).map(k=>{const [id,vi]=k.split("|"),p=P.find(x=>String(x.id)===id);if(!p)return null;const v=vi===undefined?null:vInfo(p,+vi);if(vi!==undefined&&!v)return null;return{k,p,n:C[k],name:v?`${p.name} (${v.name})`:p.name,price:v?v.price:p.price}}).filter(Boolean);
 if(!items.length){box.innerHTML='<p>Giỏ hàng đang trống.</p><a class="btn" href="san-pham.html">Chọn sản phẩm</a>';return}
-const tot=items.reduce((a,x)=>a+x.p.price*x.n,0);
-box.innerHTML=`<div class="tw"><table><thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th><th></th></tr></thead><tbody>${items.map(x=>`<tr><td>${esc(x.p.name)}</td><td>${vnd(x.p.price)}</td><td><input class="qty" type="number" min="1" value="${x.n}" data-q="${x.p.id}" aria-label="Số lượng"></td><td>${vnd(x.p.price*x.n)}</td><td><button class="btn del sm" data-rm="${x.p.id}">Xóa</button></td></tr>`).join("")}</tbody></table></div>
+const tot=items.reduce((a,x)=>a+x.price*x.n,0);
+box.innerHTML=`<div class="tw"><table><thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th><th></th></tr></thead><tbody>${items.map(x=>`<tr><td>${esc(x.name)}</td><td>${vnd(x.price)}</td><td><input class="qty" type="number" min="1" value="${x.n}" data-q="${x.k}" aria-label="Số lượng"></td><td>${vnd(x.price*x.n)}</td><td><button class="btn del sm" data-rm="${x.k}">Xóa</button></td></tr>`).join("")}</tbody></table></div>
 <div class="sum"><span>Tổng cộng</span><span>${vnd(tot)}</span></div>
 ${u0?"":'<p class="note">Bạn đã có tài khoản? <a href="dang-nhap.html">Đăng nhập</a> để tự điền thông tin và xem lại đơn hàng.</p>'}<form id="of" class="form"><h2>Thông tin giao hàng</h2><label>Họ tên<input name="name" required autocomplete="name" value="${esc(u0?u0.name:"")}"></label><label>Số điện thoại<input name="phone" value="${esc(u0?u0.phone:"")}" type="tel" required pattern="0[0-9]{9}" title="Nhập số điện thoại 10 chữ số" autocomplete="tel"></label><label>Địa chỉ nhận hàng<input name="addr" required autocomplete="street-address"></label><label>Ghi chú<textarea name="note" rows="2"></textarea></label><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="btn" id="ob">Đặt hàng</button></form>`;
 $$("[data-q]",box).forEach(i=>i.onchange=()=>{C[i.dataset.q]=Math.max(1,+i.value||1);saveC();draw()});
 $$("[data-rm]",box).forEach(b=>b.onclick=()=>{delete C[b.dataset.rm];saveC();draw()});
 $("#of").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const btn=$("#ob");btn.disabled=true;btn.textContent="Đang gửi đơn…";
-const O=rd(K.o,[]),id="TI"+Date.now().toString().slice(-7),its=items.map(x=>x.p.name+" × "+x.n);
+const O=rd(K.o,[]),id="TI"+Date.now().toString().slice(-7),its=items.map(x=>x.name+" × "+x.n);
 O.unshift({id,uid:u0?u0.id:null,time:new Date().toLocaleString("vi-VN"),...f,total:tot,items:its});wr(K.o,O);
 const sent=await sendOrder({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
 C={};saveC();draw(id,sent)}};
@@ -179,7 +189,7 @@ const FAQ=[
 const STOP=new Set("cho toi can mua gia bao nhieu la co khong shop ban minh xem tim ve cua cac nhung mot cai chiec nay do nao o san pham hoi".split(" "));
 const find=n=>{const ks=n.split(" ").filter(w=>w.length>1&&!STOP.has(w));if(!ks.length)return[];
 return P.map(p=>{const hw=bare(p.name+" "+p.cat+" "+p.desc).split(" ");return{p,s:ks.filter(k=>hw.some(w=>w.startsWith(k))).length}}).filter(x=>x.s).sort((a,b)=>b.s-a.s).slice(0,3).map(x=>x.p)};
-const row=p=>`<div class="cp"><div><strong>${esc(p.name)}</strong><br><span class="price">${vnd(p.price)}</span>${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sm sec" data-v="${p.id}">Xem</button><button class="btn sm" data-add="${p.id}">Thêm giỏ</button><button class="btn sm gold" data-buy="${p.id}">Mua ngay</button></div></div>`;
+const row=p=>`<div class="cp"><div><strong>${esc(p.name)}</strong><br><span class="price">${vItems(p).length?fromPrice(p):vnd(p.price)}</span>${p.old>p.price&&!vItems(p).length?` <s class="old">${vnd(p.old)}</s>`:""}</div><div class="acts"><button class="btn sm sec" data-v="${p.id}">Xem</button>${vItems(p).length?"":`<button class="btn sm" data-add="${p.id}">Thêm giỏ</button><button class="btn sm gold" data-buy="${p.id}">Mua ngay</button>`}</div></div>`;
 const contact='<div class="qr"><a class="btn sm" href="tel:0989740300">📞 Gọi 0989 740 300</a><a class="btn sm zl" href="https://zalo.me/0989740300" target="_blank" rel="noopener">💬 Chat Zalo</a></div>';
 const reply=raw=>{const n=bare(raw),short=n.split(" ").length;
 if(has(n,["nhan vien","tu van","lien he","goi dien","sdt","so dien thoai","zalo","hotline","nguoi that"]))return "Bạn liên hệ nhân viên tại đây nhé:"+contact;
@@ -237,12 +247,12 @@ $("#bnf").onchange=async e=>{if(e.target.files[0]){(S.banners=S.banners||[]).pus
 $$("[data-bx]",tb).forEach(b=>b.onclick=()=>{S.banners.splice(+b.dataset.bx,1);save();draw()});return}
 if(tab==="c"){const cs=catItems();tb.innerHTML=`<form id="cf2" class="fgrid"><p class="full muted">Biểu tượng là một emoji (ví dụ 📱). Xóa trống tên để bỏ danh mục. Đổi tên danh mục thì cũng sửa danh mục của các sản phẩm tương ứng.</p>${cs.map((c,i)=>`<label>Tên danh mục<input name="n${i}" value="${esc(c.name)}"></label><label>Biểu tượng<input name="i${i}" value="${esc(c.icon)}" maxlength="4"></label>`).join("")}<label>Danh mục mới<input name="nn" placeholder="Ví dụ: Thời trang"></label><label>Biểu tượng<input name="ni" maxlength="4" placeholder="👕"></label><div class="full"><button class="btn">Lưu danh mục</button></div></form>`;
 $("#cf2").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),o=cs.map((c,i)=>({name:f.get("n"+i).trim(),icon:f.get("i"+i).trim()||"🛍️"})).filter(c=>c.name);if(f.get("nn").trim())o.push({name:f.get("nn").trim(),icon:f.get("ni").trim()||"🛍️"});S.cats=o;save();draw()};return}
-tb.innerHTML=(w?`<form id="pf" class="fgrid"><label>Tên sản phẩm<input name="name" required value="${esc(w.name)}"></label><label>Danh mục<input name="cat" required list="cl" value="${esc(w.cat)}"><datalist id="cl">${catItems().map(c=>c.name).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Giá bán (₫)<input name="price" type="number" min="0" step="1000" required value="${w.price}"></label><label>Giá gốc (nếu đang giảm giá)<input name="old" type="number" min="0" step="1000" value="${w.old||""}"></label><label>Link video (YouTube hoặc .mp4)<input name="video" value="${esc(w.video||"")}" placeholder="https://youtu.be/… hoặc video/ten.mp4"></label>${SB.on?'<label>Hoặc tải video từ máy (tối đa 45MB)<input type="file" id="pv" accept="video/*"></label>':""}<label class="full">Mô tả<textarea name="desc" rows="2">${esc(w.desc)}</textarea></label><label class="full"><span><input type="checkbox" name="hot" style="width:auto" ${w.hot?"checked":""}> ⭐ Sản phẩm nổi bật (hiện ở trang chủ)</span></label>
+tb.innerHTML=(w?`<form id="pf" class="fgrid"><label>Tên sản phẩm<input name="name" required value="${esc(w.name)}"></label><label>Danh mục<input name="cat" required list="cl" value="${esc(w.cat)}"><datalist id="cl">${catItems().map(c=>c.name).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Giá bán (₫)<input name="price" type="number" min="0" step="1000" required value="${w.price}"></label><label>Giá gốc (nếu đang giảm giá)<input name="old" type="number" min="0" step="1000" value="${w.old||""}"></label><label>Link video (YouTube hoặc .mp4)<input name="video" value="${esc(w.video||"")}" placeholder="https://youtu.be/… hoặc video/ten.mp4"></label>${SB.on?'<label>Hoặc tải video từ máy (tối đa 45MB)<input type="file" id="pv" accept="video/*"></label>':""}<label class="full">Mô tả<textarea name="desc" rows="2">${esc(w.desc)}</textarea></label><label>Tên nhóm phân loại (ví dụ: Màu sắc, Dòng máy)<input name="vlabel" value="${esc((w.variants&&w.variants.label)||"")}"></label><label class="full">Các phân loại: mỗi dòng một phân loại. Muốn giá riêng, ghi thêm dấu | rồi giá (ví dụ: iPhone 15 | 109000). Để trống nếu sản phẩm không có phân loại.<textarea name="vtext" rows="4" placeholder="Đen&#10;Trắng | 99000">${esc(vItems(w).map(i=>i.n+(i.p>0?" | "+i.p:"")).join("\n"))}</textarea></label><label class="full"><span><input type="checkbox" name="hot" style="width:auto" ${w.hot?"checked":""}> ⭐ Sản phẩm nổi bật (hiện ở trang chủ)</span></label>
 <div class="full"><strong>Ảnh sản phẩm</strong> <small>(ảnh đầu tiên là ảnh đại diện)</small><div class="pv">${w.imgs.map((x,i)=>`<div><img src="${esc(x)}" alt="Ảnh ${i+1}"><button type="button" data-x="${i}" aria-label="Xóa ảnh ${i+1}">×</button></div>`).join("")}</div></div>
 <label>Tải ảnh từ máy (chọn nhiều ảnh)<input type="file" id="pi" accept="image/*" multiple></label><label>Hoặc dán link / đường dẫn ảnh<input id="pu" placeholder="img/ten.jpg"></label>
 <div class="full"><button type="button" class="btn sec sm" id="pa">Thêm ảnh từ link</button></div>
 <div class="full"><button class="btn">Lưu sản phẩm</button> <button type="button" class="btn sec" id="cx">Hủy</button></div></form>`:`<p><button class="btn" id="nw">Thêm sản phẩm</button> ${SB.on?'<button class="btn sec" id="im">Nhập sản phẩm từ data.js</button>':'<button class="btn sec" id="rs">Bỏ bản nháp, dùng lại dữ liệu đã đăng</button>'}</p>`)+
-`<p class="muted">Bấm ngôi sao ở cột Nổi bật để chọn sản phẩm hiện ở trang chủ (đang chọn ${P.filter(p=>p.hot).length}).</p><div class="tw"><table><thead><tr><th>Tên</th><th>Danh mục</th><th>Giá</th><th>Nổi bật</th><th></th></tr></thead><tbody>${P.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td>${vnd(p.price)}</td><td><button type="button" class="star${p.hot?" on":""}" data-h="${p.id}" aria-pressed="${p.hot?"true":"false"}" aria-label="Nổi bật: ${esc(p.name)}">${p.hot?"★":"☆"}</button></td><td><button class="btn sec sm" data-e="${p.id}">Sửa</button> <button class="btn del sm" data-d="${p.id}">Xóa</button></td></tr>`).join("")}</tbody></table></div>`;
+`<p class="muted">Bấm ngôi sao ở cột Nổi bật để chọn sản phẩm hiện ở trang chủ (đang chọn ${P.filter(p=>p.hot).length}).</p><div class="tw"><table><thead><tr><th>Tên</th><th>Danh mục</th><th>Giá</th><th>Nổi bật</th><th></th></tr></thead><tbody>${P.map(p=>`<tr><td>${esc(p.name)}${vItems(p).length?` <small class="muted">(${vItems(p).length} phân loại)</small>`:""}</td><td>${esc(p.cat)}</td><td>${vnd(p.price)}</td><td><button type="button" class="star${p.hot?" on":""}" data-h="${p.id}" aria-pressed="${p.hot?"true":"false"}" aria-label="Nổi bật: ${esc(p.name)}">${p.hot?"★":"☆"}</button></td><td><button class="btn sec sm" data-e="${p.id}">Sửa</button> <button class="btn del sm" data-d="${p.id}">Xóa</button></td></tr>`).join("")}</tbody></table></div>`;
 if($("#nw"))$("#nw").onclick=()=>{w={id:0,name:"",cat:cats()[0]||"",price:0,imgs:[],video:"",desc:"",hot:0};draw()};
 if($("#im"))$("#im").onclick=async()=>{if(!confirm("Nhập các sản phẩm và cài đặt trong data.js lên Supabase? Chỉ nên làm một lần."))return;try{const rows=(D.products||[]).map(toRow);if(rows.length)await api("/rest/v1/products",{method:"POST",json:rows,headers:{Prefer:"return=minimal"}},true);S={...(D.settings||{}),...S};await saveSettings();await refreshP();draw()}catch(e){alert(e.message)}};
 if($("#rs"))$("#rs").onclick=()=>{if(confirm("Xóa bản nháp trên máy này?")){localStorage.removeItem(K.p);localStorage.removeItem(K.s);P=D.products;S=D.settings||{};draw()}};
@@ -255,7 +265,7 @@ $$("[data-d]",tb).forEach(b=>b.onclick=async()=>{if(!confirm("Xóa sản phẩm 
 if(SB.on){try{const r=await api("/rest/v1/products?id=eq."+b.dataset.d,{method:"DELETE",headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không xóa được (không đủ quyền).");await refreshP()}catch(e){alert(e.message)}draw();return}
 P=P.filter(p=>p.id!=b.dataset.d);save();draw()});
 const pf=$("#pf");if(pf){
-const sync=()=>{const f=new FormData(pf);Object.assign(w,{name:f.get("name"),cat:f.get("cat"),price:+f.get("price"),old:+f.get("old")||0,video:f.get("video").trim(),desc:f.get("desc"),hot:f.get("hot")?1:0})};
+const sync=()=>{const f=new FormData(pf);Object.assign(w,{name:f.get("name"),cat:f.get("cat"),price:+f.get("price"),old:+f.get("old")||0,video:f.get("video").trim(),desc:f.get("desc"),hot:f.get("hot")?1:0,variants:{label:String(f.get("vlabel")||"").trim().slice(0,40),items:parseV(f.get("vtext"))}})};
 pf.addEventListener("input",sync);
 $$("[data-x]",pf).forEach(b=>b.onclick=()=>{sync();w.imgs.splice(+b.dataset.x,1);draw()});
 const wait=el=>{const s=document.createElement("small");s.textContent=" Đang tải lên, vui lòng chờ…";el.after(s)};
@@ -265,7 +275,7 @@ wait(e.target);try{w.video=await upload(f,"video",(f.name.split(".").pop()||"mp4
 $("#pa").onclick=()=>{sync();const v=$("#pu").value.trim();if(v)w.imgs.push(v);draw()};
 pf.onsubmit=async ev=>{ev.preventDefault();sync();const o={...w,id:w.id||Date.now(),name:w.name.trim(),cat:w.cat.trim(),desc:w.desc.trim()};
 if(SB.on){const btn=$("button:not([type=button])",pf);if(btn){btn.disabled=true;btn.textContent="Đang lưu…"}
-try{if(w.id){const r=await api("/rest/v1/products?id=eq."+w.id,{method:"PATCH",json:toRow(o),headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không đủ quyền sửa. Kiểm tra email quản trị trong file SQL.")}else await api("/rest/v1/products",{method:"POST",json:toRow(o),headers:{Prefer:"return=minimal"}},true);await refreshP()}catch(e){alert("Không lưu được: "+e.message);draw();return}
+try{if(w.id){const r=await api("/rest/v1/products?id=eq."+w.id,{method:"PATCH",json:toRow(o),headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không đủ quyền sửa. Kiểm tra email quản trị trong file SQL.")}else await api("/rest/v1/products",{method:"POST",json:toRow(o),headers:{Prefer:"return=minimal"}},true);await refreshP()}catch(e){alert("Không lưu được: "+e.message+(/variants/.test(e.message)?"\nBạn cần chạy lệnh SQL thêm cột phân loại trong Supabase (xem hướng dẫn).":""));draw();return}
 w=null;draw();return}
 if(w.id)P=P.map(p=>p.id===w.id?o:p);else P.unshift(o);w=null;save();draw()}}};
 (async()=>{if(SB.on&&ok&&!(await token()))ok=false;draw()})()}
