@@ -1,4 +1,4 @@
-(()=>{
+(async()=>{
 "use strict";
 const ADMIN_PASS=(window.CFG&&CFG.adminPass)||"admin123",ORDER_HOOK=(window.CFG&&CFG.orderHook)||""; /* cài đặt nằm ở js/config.js */
 const K={u:"lh_users",ss:"lh_session",p:"lh_products",s:"lh_settings",c:"lh_cart",o:"lh_orders"};
@@ -8,8 +8,35 @@ const rd=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){retu
 const wr=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const vnd=n=>new Intl.NumberFormat("vi-VN").format(n)+"₫";
-let P=rd(K.p,null)||D.products,S=rd(K.s,null)||D.settings||{},C=rd(K.c,{});
+let P=D.products,S=D.settings||{},C=rd(K.c,{});
 const page=document.body.dataset.page;
+/* ===== Supabase (lưu sản phẩm, ảnh, đơn hàng trên mạng). Bỏ trống supabaseUrl/supabaseKey trong config.js để dùng data.js ===== */
+const SB={url:((window.CFG&&CFG.supabaseUrl)||"").replace(/\/+$/,""),key:(window.CFG&&CFG.supabaseKey)||""};SB.on=!!(SB.url&&SB.key);
+const ses=()=>rd("lh_sb",null);
+const token=async()=>{const s=ses();if(!s)return null;if(s.expires_at-60>Date.now()/1000)return s;
+try{const r=await fetch(SB.url+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});if(!r.ok)throw 0;const j=await r.json();
+const n={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+j.expires_in,email:s.email};wr("lh_sb",n);return n}catch(e){localStorage.removeItem("lh_sb");return null}};
+const api=async(path,o={},auth=false)=>{const h={apikey:SB.key,...(o.json?{"Content-Type":"application/json"}:{}),...(o.headers||{})};
+if(auth){const s=await token();if(!s)throw new Error("Phiên đăng nhập đã hết, hãy đăng nhập lại.");h.Authorization="Bearer "+s.access_token}
+const r=await fetch(SB.url+path,{method:o.method||"GET",headers:h,body:o.json?JSON.stringify(o.json):o.body});
+if(!r.ok){let t="";try{t=await r.text()}catch(e){}throw new Error("Lỗi "+r.status+": "+t.slice(0,160))}
+return (r.headers.get("content-type")||"").includes("json")?r.json():r.text()};
+const fromRow=r=>({id:r.id,name:r.name,cat:r.cat,price:+r.price,old:+r.old||0,desc:r.descr||"",video:r.video||"",imgs:Array.isArray(r.imgs)?r.imgs:[],hot:r.hot?1:0});
+const toRow=p=>({name:p.name,cat:p.cat,price:p.price,old:p.old||0,descr:p.desc||"",video:p.video||"",imgs:p.imgs||[],hot:!!p.hot});
+const loadRemote=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),4000);
+try{const [a,b]=await Promise.all([fetch(SB.url+"/rest/v1/products?select=*&order=created_at.desc",{headers:{apikey:SB.key},signal:c.signal}),fetch(SB.url+"/rest/v1/settings?select=value&key=eq.site",{headers:{apikey:SB.key},signal:c.signal})]);
+if(!a.ok||!b.ok)throw 0;const rows=await a.json(),st=await b.json();const out={products:rows.map(fromRow),settings:(st[0]&&st[0].value)||{}};wr("lh_remote",out);return out}catch(e){return rd("lh_remote",null)}finally{clearTimeout(t)}};
+const refreshP=async()=>{P=(await api("/rest/v1/products?select=*&order=created_at.desc")).map(fromRow)};
+const saveSettings=()=>api("/rest/v1/settings?on_conflict=key",{method:"POST",json:{key:"site",value:S},headers:{Prefer:"resolution=merge-duplicates,return=minimal"}},true);
+const shrinkBlob=(f,max,q)=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("Không nén được ảnh")),"image/jpeg",q)};i.onerror=()=>no(new Error("Không đọc được ảnh"));i.src=r.result};r.onerror=no;r.readAsDataURL(f)});
+const upload=async(blob,kind,ext)=>{const path=kind+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"."+ext;
+await api("/storage/v1/object/media/"+path,{method:"POST",body:blob,headers:{"Content-Type":blob.type||"application/octet-stream"}},true);return SB.url+"/storage/v1/object/public/media/"+path};
+const img=async(f,max,q)=>{try{return SB.on?await upload(await shrinkBlob(f,max,q),"img","jpg"):await shrink(f,max,q)}catch(e){alert("Không tải ảnh lên được: "+e.message);throw e}};
+const sendOrder=async o=>{if(o.website)return true;let ok=false;
+if(SB.on){try{await api("/rest/v1/orders",{method:"POST",json:{code:o.id,name:o.name,phone:o.phone,addr:o.addr,note:o.note||"",items:o.items,total:o.total},headers:{Prefer:"return=minimal"}});ok=true}catch(e){}}
+if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id:o.id,name:o.name,phone:o.phone,addr:o.addr,note:o.note,website:o.website,total:o.total,items:o.items})});ok=true}catch(e){}}
+return ok};
+if(!SB.on){P=rd(K.p,null)||P;S=rd(K.s,null)||S}else{const R=await loadRemote();if(R){P=R.products;S=R.settings}}
 const saveC=()=>{wr(K.c,C);badge()};
 const badge=()=>{const n=Object.values(C).reduce((a,b)=>a+b,0),e=$("#cn");if(e)e.textContent=n};
 const cats=()=>[...new Set(P.map(p=>p.cat))];
@@ -63,7 +90,7 @@ $("[name=qty]",dlg).oninput=e=>{$("#bt",dlg).textContent=vnd(p.price*Math.max(1,
 $("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=p.price*q,oid="TI"+Date.now().toString().slice(-7),its=[p.name+" × "+q];
 const b=$("#qb",dlg);b.disabled=true;b.textContent="Đang gửi đơn…";
 const O=rd(K.o,[]);O.unshift({id:oid,uid:u?u.id:null,time:new Date().toLocaleString("vi-VN"),name:f.name,phone:f.phone,addr:f.addr,note:f.note,total:tot,items:its});wr(K.o,O);
-let sent=false;if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id:oid,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its})});sent=true}catch(x){}}
+const sent=await sendOrder({id:oid,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
 dlg.innerHTML=`<div class="in"><div class="ok"><h2>Đặt hàng thành công</h2><p>Mã đơn <strong>${oid}</strong>. ${sent?"Chúng tôi sẽ gọi xác nhận trong vòng 2 giờ.":'Chưa gửi được thông báo tới cửa hàng, vui lòng <a href="tel:0989740300">gọi 0989 740 300</a> hoặc nhắn <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">Zalo</a> kèm mã đơn.'}</p></div><div class="acts"><button class="btn" id="qx">Đóng</button></div></div>`;
 $("#qx",dlg).onclick=()=>dlg.close()}};
 document.addEventListener("click",e=>{const v=e.target.closest("[data-v]");if(v){open(v.dataset.v);return}const y=e.target.closest("[data-buy]");if(y){buy(y.dataset.buy);return}
@@ -113,7 +140,7 @@ $$("[data-rm]",box).forEach(b=>b.onclick=()=>{delete C[b.dataset.rm];saveC();dra
 $("#of").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const btn=$("#ob");btn.disabled=true;btn.textContent="Đang gửi đơn…";
 const O=rd(K.o,[]),id="TI"+Date.now().toString().slice(-7),its=items.map(x=>x.p.name+" × "+x.n);
 O.unshift({id,uid:u0?u0.id:null,time:new Date().toLocaleString("vi-VN"),...f,total:tot,items:its});wr(K.o,O);
-let sent=false;if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its})});sent=true}catch(x){}}
+const sent=await sendOrder({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
 C={};saveC();draw(id,sent)}};
 draw()}
 
@@ -176,47 +203,63 @@ $("#cb-f",box).onsubmit=e=>{e.preventDefault();ask(inp.value);inp.value=""};
 $$("[data-q]",box).forEach(b=>b.onclick=()=>ask(b.dataset.q))}
 /* Quản trị */
 if(page==="admin"){
-const A=$("#adm");let tab="p",w=null,ok=sessionStorage.getItem("lh_ok")==="1";
-const save=()=>{if(!(wr(K.p,P)&&wr(K.s,S)))alert("Bộ nhớ trình duyệt đã đầy. Hãy dùng đường dẫn ảnh (img/ten.jpg) hoặc xóa bớt ảnh tải lên.")};
+const A=$("#adm");let tab="p",w=null,OD=null,ok=SB.on?!!ses():sessionStorage.getItem("lh_ok")==="1";
+const getO=async()=>{if(!SB.on)return rd(K.o,[]);if(OD===null){try{OD=await api("/rest/v1/orders?select=*&order=created_at.desc&limit=300",{},true)}catch(e){OD=[]}}return OD};
+const save=async()=>{if(SB.on){try{await saveSettings()}catch(e){alert("Không lưu được: "+e.message)}return}if(!(wr(K.p,P)&&wr(K.s,S)))alert("Bộ nhớ trình duyệt đã đầy. Hãy dùng đường dẫn ảnh (img/ten.jpg) hoặc xóa bớt ảnh tải lên.")};
 const dl=()=>{const b=new Blob(["window.SHOP="+JSON.stringify({settings:S,products:P},null,1)+";\n"],{type:"text/javascript"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="data.js";a.click()};
-const draw=()=>{
+const draw=async()=>{
+if(!ok&&SB.on){A.innerHTML=`<h1>Đăng nhập quản trị</h1><form id="lf" class="form" style="max-width:360px"><label>Email<input type="email" id="em" required autocomplete="username"></label><label>Mật khẩu<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn">Đăng nhập</button><p id="le" class="err" role="alert"></p></form>`;
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#le").textContent="Đang đăng nhập…";try{const r=await fetch(SB.url+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({email:$("#em").value.trim(),password:$("#pw").value})});const j=await r.json();if(!r.ok)throw 0;
+wr("lh_sb",{access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+j.expires_in,email:j.user&&j.user.email});ok=true;OD=null;draw()}catch(x){$("#le").textContent="Email hoặc mật khẩu chưa đúng."}};return}
 if(!ok){A.innerHTML=`<h1>Đăng nhập quản trị</h1><form id="lf" class="form" style="max-width:360px"><label>Mật khẩu<input type="password" id="pw" required autocomplete="current-password"></label><button class="btn">Đăng nhập</button><p id="le" class="err" role="alert"></p></form>`;
 $("#lf").onsubmit=e=>{e.preventDefault();if($("#pw").value===ADMIN_PASS){ok=true;sessionStorage.setItem("lh_ok","1");draw()}else $("#le").textContent="Mật khẩu chưa đúng."};return}
-const O=rd(K.o,[]);
-A.innerHTML=`<div class="adm-head"><h1>Quản trị</h1><div class="acts"><button class="btn sm" id="dl">Tải data.js để đăng lên web</button><button class="btn sec sm" id="lo">Đăng xuất</button></div></div>
-<p class="note">Thay đổi đang lưu như bản nháp trên máy này. Khách chỉ thấy sau khi bạn tải <strong>data.js</strong>, chép đè vào thư mục <strong>js/</strong> rồi đưa lên GitHub để Vercel cập nhật.</p>
+const O=await getO();
+A.innerHTML=`<div class="adm-head"><h1>Quản trị</h1><div class="acts">${SB.on?"":'<button class="btn sm" id="dl">Tải data.js để đăng lên web</button>'}<button class="btn sec sm" id="lo">Đăng xuất</button></div></div>
+${SB.on?'<p class="note">Thay đổi được lưu thẳng lên web, khách thấy ngay, không cần tải file hay đưa lên GitHub.</p>':'<p class="note">Thay đổi đang lưu như bản nháp trên máy này. Khách chỉ thấy sau khi bạn tải <strong>data.js</strong>, chép đè vào thư mục <strong>js/</strong> rồi đưa lên GitHub để Vercel cập nhật.</p>'}
 <div class="tabs"><button class="btn ${tab==="p"?"":"sec"}" data-t="p">Sản phẩm (${P.length})</button><button class="btn ${tab==="s"?"":"sec"}" data-t="s">Banner & nền</button><button class="btn ${tab==="c"?"":"sec"}" data-t="c">Danh mục</button><button class="btn ${tab==="o"?"":"sec"}" data-t="o">Đơn hàng (${O.length})</button></div><div id="tb"></div>`;
-$("#dl").onclick=dl;$("#lo").onclick=()=>{sessionStorage.removeItem("lh_ok");ok=false;draw()};
+if($("#dl"))$("#dl").onclick=dl;$("#lo").onclick=()=>{sessionStorage.removeItem("lh_ok");localStorage.removeItem("lh_sb");OD=null;ok=false;draw()};
 $$("[data-t]",A).forEach(b=>b.onclick=()=>{tab=b.dataset.t;w=null;draw()});
 const tb=$("#tb");
-if(tab==="o"){tb.innerHTML=O.length?`<div class="tw"><table><thead><tr><th>Mã</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng</th></tr></thead><tbody>${O.map(o=>`<tr><td>${esc(o.id)}<br><small>${esc(o.time)}</small></td><td>${esc(o.name)}<br>${esc(o.phone)}<br><small>${esc(o.addr)}</small></td><td>${o.items.map(esc).join("<br>")}</td><td>${vnd(o.total)}</td></tr>`).join("")}</tbody></table></div>`:"<p>Chưa có đơn hàng nào.</p>";return}
+if(tab==="o"){const oo=O.map(o=>SB.on?{id:o.code,rid:o.id,time:new Date(o.created_at).toLocaleString("vi-VN"),name:o.name,phone:o.phone,addr:o.addr,note:o.note,items:o.items||[],total:o.total,status:o.status}:o);
+tb.innerHTML=(SB.on?'<p><button class="btn sec sm" id="ro">Tải lại đơn hàng</button></p>':"")+(oo.length?`<div class="tw"><table><thead><tr><th>Mã</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng</th>${SB.on?"<th>Trạng thái</th>":""}</tr></thead><tbody>${oo.map(o=>`<tr><td>${esc(o.id)}<br><small>${esc(o.time)}</small></td><td>${esc(o.name)}<br>${esc(o.phone)}<br><small>${esc(o.addr)}</small>${o.note?`<br><small>Ghi chú: ${esc(o.note)}</small>`:""}</td><td>${o.items.map(esc).join("<br>")}</td><td>${vnd(o.total)}</td>${SB.on?`<td><select data-st="${o.rid}" aria-label="Trạng thái đơn">${["Mới","Đã gọi","Đang giao","Hoàn thành","Hủy"].map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></td>`:""}</tr>`).join("")}</tbody></table></div>`:"<p>Chưa có đơn hàng nào.</p>");
+if($("#ro"))$("#ro").onclick=()=>{OD=null;draw()};
+$$("[data-st]",tb).forEach(s=>s.onchange=async()=>{try{const r=await api("/rest/v1/orders?id=eq."+s.dataset.st,{method:"PATCH",json:{status:s.value},headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không đủ quyền cập nhật.");const x=OD.find(z=>String(z.id)===s.dataset.st);if(x)x.status=s.value}catch(e){alert(e.message)}});return}
 if(tab==="s"){tb.innerHTML=`<div class="fgrid"><div class="full"><h2>Banner trang chủ</h2><p class="muted">Ảnh ngang (tỉ lệ 16:6), tự chạy luân phiên. Có thể gắn link khi khách bấm vào banner.</p><div class="pv">${(S.banners||[]).map((b,i)=>`<div><img src="${esc(b.img)}" alt="Banner ${i+1}" style="width:150px;height:56px"><button type="button" data-bx="${i}" aria-label="Xóa banner ${i+1}">×</button></div>`).join("")}</div></div><label>Thêm banner từ máy<input type="file" id="bnf" accept="image/*"></label><label>Link khi bấm vào (không bắt buộc)<input id="bnl" placeholder="san-pham.html?sale=1"></label><div class="full"><h2>Ảnh nền chữ (khi chưa có banner)</h2><div class="bgpv" style="${S.heroBg?`background-image:url('${esc(S.heroBg)}')`:""}" role="img" aria-label="Xem trước ảnh nền"></div></div>
 <label>Tải ảnh từ máy<input type="file" id="bf" accept="image/*"></label><label>Hoặc dán link / đường dẫn ảnh<input id="bu" placeholder="img/banner.jpg hoặc https://…" value="${S.heroBg&&!S.heroBg.startsWith("data:")?esc(S.heroBg):""}"></label>
 <div class="full"><button class="btn" id="bs">Lưu link ảnh</button> <button class="btn del" id="bd">Xóa ảnh nền</button></div></div>`;
-$("#bf").onchange=async e=>{if(e.target.files[0]){S.heroBg=await shrink(e.target.files[0],1600,.75);save();draw()}};
+$("#bf").onchange=async e=>{if(e.target.files[0]){S.heroBg=await img(e.target.files[0],1600,.75);save();draw()}};
 $("#bs").onclick=()=>{S.heroBg=$("#bu").value.trim();save();draw()};$("#bd").onclick=()=>{S.heroBg="";save();draw()};
-$("#bnf").onchange=async e=>{if(e.target.files[0]){(S.banners=S.banners||[]).push({img:await shrink(e.target.files[0],1600,.75),link:$("#bnl").value.trim()});save();draw()}};
+$("#bnf").onchange=async e=>{if(e.target.files[0]){(S.banners=S.banners||[]).push({img:await img(e.target.files[0],1600,.75),link:$("#bnl").value.trim()});save();draw()}};
 $$("[data-bx]",tb).forEach(b=>b.onclick=()=>{S.banners.splice(+b.dataset.bx,1);save();draw()});return}
 if(tab==="c"){const cs=catItems();tb.innerHTML=`<form id="cf2" class="fgrid"><p class="full muted">Biểu tượng là một emoji (ví dụ 📱). Xóa trống tên để bỏ danh mục. Đổi tên danh mục thì cũng sửa danh mục của các sản phẩm tương ứng.</p>${cs.map((c,i)=>`<label>Tên danh mục<input name="n${i}" value="${esc(c.name)}"></label><label>Biểu tượng<input name="i${i}" value="${esc(c.icon)}" maxlength="4"></label>`).join("")}<label>Danh mục mới<input name="nn" placeholder="Ví dụ: Thời trang"></label><label>Biểu tượng<input name="ni" maxlength="4" placeholder="👕"></label><div class="full"><button class="btn">Lưu danh mục</button></div></form>`;
 $("#cf2").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),o=cs.map((c,i)=>({name:f.get("n"+i).trim(),icon:f.get("i"+i).trim()||"🛍️"})).filter(c=>c.name);if(f.get("nn").trim())o.push({name:f.get("nn").trim(),icon:f.get("ni").trim()||"🛍️"});S.cats=o;save();draw()};return}
-tb.innerHTML=(w?`<form id="pf" class="fgrid"><label>Tên sản phẩm<input name="name" required value="${esc(w.name)}"></label><label>Danh mục<input name="cat" required list="cl" value="${esc(w.cat)}"><datalist id="cl">${catItems().map(c=>c.name).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Giá bán (₫)<input name="price" type="number" min="0" step="1000" required value="${w.price}"></label><label>Giá gốc (nếu đang giảm giá)<input name="old" type="number" min="0" step="1000" value="${w.old||""}"></label><label>Link video (YouTube hoặc .mp4)<input name="video" value="${esc(w.video||"")}" placeholder="https://youtu.be/… hoặc video/ten.mp4"></label><label class="full">Mô tả<textarea name="desc" rows="2">${esc(w.desc)}</textarea></label><label class="full"><span><input type="checkbox" name="hot" style="width:auto" ${w.hot?"checked":""}> Hiển thị ở trang chủ</span></label>
+tb.innerHTML=(w?`<form id="pf" class="fgrid"><label>Tên sản phẩm<input name="name" required value="${esc(w.name)}"></label><label>Danh mục<input name="cat" required list="cl" value="${esc(w.cat)}"><datalist id="cl">${catItems().map(c=>c.name).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label><label>Giá bán (₫)<input name="price" type="number" min="0" step="1000" required value="${w.price}"></label><label>Giá gốc (nếu đang giảm giá)<input name="old" type="number" min="0" step="1000" value="${w.old||""}"></label><label>Link video (YouTube hoặc .mp4)<input name="video" value="${esc(w.video||"")}" placeholder="https://youtu.be/… hoặc video/ten.mp4"></label>${SB.on?'<label>Hoặc tải video từ máy (tối đa 45MB)<input type="file" id="pv" accept="video/*"></label>':""}<label class="full">Mô tả<textarea name="desc" rows="2">${esc(w.desc)}</textarea></label><label class="full"><span><input type="checkbox" name="hot" style="width:auto" ${w.hot?"checked":""}> Hiển thị ở trang chủ</span></label>
 <div class="full"><strong>Ảnh sản phẩm</strong> <small>(ảnh đầu tiên là ảnh đại diện)</small><div class="pv">${w.imgs.map((x,i)=>`<div><img src="${esc(x)}" alt="Ảnh ${i+1}"><button type="button" data-x="${i}" aria-label="Xóa ảnh ${i+1}">×</button></div>`).join("")}</div></div>
 <label>Tải ảnh từ máy (chọn nhiều ảnh)<input type="file" id="pi" accept="image/*" multiple></label><label>Hoặc dán link / đường dẫn ảnh<input id="pu" placeholder="img/ten.jpg"></label>
 <div class="full"><button type="button" class="btn sec sm" id="pa">Thêm ảnh từ link</button></div>
-<div class="full"><button class="btn">Lưu sản phẩm</button> <button type="button" class="btn sec" id="cx">Hủy</button></div></form>`:`<p><button class="btn" id="nw">Thêm sản phẩm</button> <button class="btn sec" id="rs">Bỏ bản nháp, dùng lại dữ liệu đã đăng</button></p>`)+
+<div class="full"><button class="btn">Lưu sản phẩm</button> <button type="button" class="btn sec" id="cx">Hủy</button></div></form>`:`<p><button class="btn" id="nw">Thêm sản phẩm</button> ${SB.on?'<button class="btn sec" id="im">Nhập sản phẩm từ data.js</button>':'<button class="btn sec" id="rs">Bỏ bản nháp, dùng lại dữ liệu đã đăng</button>'}</p>`)+
 `<div class="tw"><table><thead><tr><th>Tên</th><th>Danh mục</th><th>Giá</th><th></th></tr></thead><tbody>${P.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td>${vnd(p.price)}</td><td><button class="btn sec sm" data-e="${p.id}">Sửa</button> <button class="btn del sm" data-d="${p.id}">Xóa</button></td></tr>`).join("")}</tbody></table></div>`;
 if($("#nw"))$("#nw").onclick=()=>{w={id:0,name:"",cat:cats()[0]||"",price:0,imgs:[],video:"",desc:"",hot:0};draw()};
+if($("#im"))$("#im").onclick=async()=>{if(!confirm("Nhập các sản phẩm và cài đặt trong data.js lên Supabase? Chỉ nên làm một lần."))return;try{const rows=(D.products||[]).map(toRow);if(rows.length)await api("/rest/v1/products",{method:"POST",json:rows,headers:{Prefer:"return=minimal"}},true);S={...(D.settings||{}),...S};await saveSettings();await refreshP();draw()}catch(e){alert(e.message)}};
 if($("#rs"))$("#rs").onclick=()=>{if(confirm("Xóa bản nháp trên máy này?")){localStorage.removeItem(K.p);localStorage.removeItem(K.s);P=D.products;S=D.settings||{};draw()}};
 if($("#cx"))$("#cx").onclick=()=>{w=null;draw()};
 $$("[data-e]",tb).forEach(b=>b.onclick=()=>{const p=P.find(x=>x.id==b.dataset.e);w={...p,imgs:[...(p.imgs||[])]};draw();scrollTo(0,0)});
-$$("[data-d]",tb).forEach(b=>b.onclick=()=>{if(confirm("Xóa sản phẩm này?")){P=P.filter(p=>p.id!=b.dataset.d);save();draw()}});
+$$("[data-d]",tb).forEach(b=>b.onclick=async()=>{if(!confirm("Xóa sản phẩm này?"))return;
+if(SB.on){try{const r=await api("/rest/v1/products?id=eq."+b.dataset.d,{method:"DELETE",headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không xóa được (không đủ quyền).");await refreshP()}catch(e){alert(e.message)}draw();return}
+P=P.filter(p=>p.id!=b.dataset.d);save();draw()});
 const pf=$("#pf");if(pf){
 const sync=()=>{const f=new FormData(pf);Object.assign(w,{name:f.get("name"),cat:f.get("cat"),price:+f.get("price"),old:+f.get("old")||0,video:f.get("video").trim(),desc:f.get("desc"),hot:f.get("hot")?1:0})};
 pf.addEventListener("input",sync);
 $$("[data-x]",pf).forEach(b=>b.onclick=()=>{sync();w.imgs.splice(+b.dataset.x,1);draw()});
-$("#pi").onchange=async e=>{sync();for(const f of e.target.files)w.imgs.push(await shrink(f,900,.8));draw()};
+const wait=el=>{const s=document.createElement("small");s.textContent=" Đang tải lên, vui lòng chờ…";el.after(s)};
+$("#pi").onchange=async e=>{sync();wait(e.target);try{for(const f of e.target.files)w.imgs.push(await img(f,900,.8))}catch(x){}draw()};
+if($("#pv"))$("#pv").onchange=async e=>{sync();const f=e.target.files[0];if(!f)return;if(f.size>45*1024*1024){alert("Video lớn hơn 45MB. Hãy nén video nhỏ hơn hoặc đăng lên YouTube rồi dán link.");e.target.value="";return}
+wait(e.target);try{w.video=await upload(f,"video",(f.name.split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4")}catch(x){alert("Không tải video lên được: "+x.message)}draw()};
 $("#pa").onclick=()=>{sync();const v=$("#pu").value.trim();if(v)w.imgs.push(v);draw()};
-pf.onsubmit=ev=>{ev.preventDefault();sync();const o={...w,id:w.id||Date.now(),name:w.name.trim(),cat:w.cat.trim(),desc:w.desc.trim()};
+pf.onsubmit=async ev=>{ev.preventDefault();sync();const o={...w,id:w.id||Date.now(),name:w.name.trim(),cat:w.cat.trim(),desc:w.desc.trim()};
+if(SB.on){const btn=$("button:not([type=button])",pf);if(btn){btn.disabled=true;btn.textContent="Đang lưu…"}
+try{if(w.id){const r=await api("/rest/v1/products?id=eq."+w.id,{method:"PATCH",json:toRow(o),headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không đủ quyền sửa. Kiểm tra email quản trị trong file SQL.")}else await api("/rest/v1/products",{method:"POST",json:toRow(o),headers:{Prefer:"return=minimal"}},true);await refreshP()}catch(e){alert("Không lưu được: "+e.message);draw();return}
+w=null;draw();return}
 if(w.id)P=P.map(p=>p.id===w.id?o:p);else P.unshift(o);w=null;save();draw()}}};
-draw()}
+(async()=>{if(SB.on&&ok&&!(await token()))ok=false;draw()})()}
 })();

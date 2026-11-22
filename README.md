@@ -37,3 +37,10 @@ Mỗi sản phẩm có nút "Mua ngay": khách điền họ tên, số điện t
 
 ## Phân trang
 Trang Sản phẩm chia trang, mặc định 12 sản phẩm mỗi trang. Đổi số này ở js/config.js, mục perPage.
+
+## Supabase (thêm sản phẩm trực tiếp trên web, không qua Git)
+1. Tạo dự án Supabase, chạy file supabase-setup.sql trong SQL Editor (sửa email quản trị trước khi chạy).
+2. Tạo tài khoản quản trị (Authentication > Users) và tắt đăng ký tự do.
+3. Điền supabaseUrl và supabaseKey (Publishable key) vào js/config.js.
+4. Vào /quan-tri, đăng nhập bằng email và mật khẩu, thêm sản phẩm, ảnh, video: khách thấy ngay.
+Để trống supabaseUrl/supabaseKey thì web dùng js/data.js như trước.
