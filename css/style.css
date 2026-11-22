@@ -89,3 +89,15 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 #count{scroll-margin-top:140px}.pg{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:28px 0 8px}
 .pg button{min-width:42px;height:42px;border:1px solid #bccabd;background:#fff;border-radius:10px;font:inherit;cursor:pointer;color:var(--ink);padding:0 12px}
 .pg button.on{background:var(--g);color:#fff;border-color:var(--g)}.pg button:disabled{opacity:.4;cursor:default}.pg span{align-self:center;color:var(--mut)}
+
+/* Sản phẩm xếp ngang nhiều cột: điện thoại 2 cột, máy tính bảng 3 cột, máy tính 4 cột */
+.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:640px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+@media(min-width:960px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}}
+.ds{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card h3{overflow-wrap:anywhere}
+@media(max-width:639px){.card .b{padding:10px}.card h3{font-size:.92rem}.card .price{font-size:1rem}.card .acts{flex-direction:column}.card .btn{padding:8px 6px;font-size:.88rem}.card small{font-size:.78rem}}
+.cr{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}.cr .muted{margin:0}
+.vt{display:flex;gap:6px}.vt button{border:1px solid #bccabd;background:#fff;color:var(--ink);border-radius:10px;padding:6px 12px;font:inherit;font-size:.9rem;cursor:pointer}.vt button[aria-pressed="true"]{background:var(--g);color:#fff;border-color:var(--g)}
+.grid.list{grid-template-columns:1fr}.grid.list .card{flex-direction:row}.grid.list .card>.pw{flex:0 0 38%;max-width:220px}
+.grid.list .thumb{height:100%;min-height:140px;aspect-ratio:auto}.grid.list .ds{-webkit-line-clamp:3}.grid.list .card .acts{flex-direction:row}

@@ -27,8 +27,8 @@ const toRow=p=>({name:p.name,cat:p.cat,price:p.price,old:p.old||0,descr:p.desc||
 const loadRemote=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),4000);
 try{const [a,b]=await Promise.all([fetch(SB.url+"/rest/v1/products?select=*&order=created_at.desc",{headers:{apikey:SB.key},signal:c.signal}),fetch(SB.url+"/rest/v1/settings?select=value&key=eq.site",{headers:{apikey:SB.key},signal:c.signal})]);
 if(!a.ok||!b.ok)throw 0;const rows=await a.json(),st=await b.json();const out={products:rows.map(fromRow),settings:(st[0]&&st[0].value)||{}};wr("lh_remote",out);return out}catch(e){return rd("lh_remote",null)}finally{clearTimeout(t)}};
-const refreshP=async()=>{P=(await api("/rest/v1/products?select=*&order=created_at.desc")).map(fromRow)};
-const saveSettings=()=>api("/rest/v1/settings?on_conflict=key",{method:"POST",json:{key:"site",value:S},headers:{Prefer:"resolution=merge-duplicates,return=minimal"}},true);
+const refreshP=async()=>{P=(await api("/rest/v1/products?select=*&order=created_at.desc")).map(fromRow);if(!S.ready){try{await saveSettings()}catch(e){}}};
+const saveSettings=()=>{S.ready=true;return api("/rest/v1/settings?on_conflict=key",{method:"POST",json:{key:"site",value:S},headers:{Prefer:"resolution=merge-duplicates,return=minimal"}},true)};
 const shrinkBlob=(f,max,q)=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("Không nén được ảnh")),"image/jpeg",q)};i.onerror=()=>no(new Error("Không đọc được ảnh"));i.src=r.result};r.onerror=no;r.readAsDataURL(f)});
 const upload=async(blob,kind,ext)=>{const path=kind+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"."+ext;
 await api("/storage/v1/object/media/"+path,{method:"POST",body:blob,headers:{"Content-Type":blob.type||"application/octet-stream"}},true);return SB.url+"/storage/v1/object/public/media/"+path};
@@ -37,7 +37,7 @@ const sendOrder=async o=>{if(o.website)return true;let ok=false;
 if(SB.on){try{await api("/rest/v1/orders",{method:"POST",json:{code:o.id,name:o.name,phone:o.phone,addr:o.addr,note:o.note||"",items:o.items,total:o.total},headers:{Prefer:"return=minimal"}});ok=true}catch(e){}}
 if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({id:o.id,name:o.name,phone:o.phone,addr:o.addr,note:o.note,website:o.website,total:o.total,items:o.items})});ok=true}catch(e){}}
 return ok};
-if(!SB.on){P=rd(K.p,null)||P;S=rd(K.s,null)||S}else{const R=await loadRemote();if(R){P=R.products;S=R.settings}}
+if(!SB.on){P=rd(K.p,null)||P;S=rd(K.s,null)||S}else{const R=await loadRemote();if(R&&(page==="admin"||R.settings.ready||R.products.length)){P=R.products;S=R.settings}}
 const saveC=()=>{wr(K.c,C);badge()};
 const badge=()=>{const n=Object.values(C).reduce((a,b)=>a+b,0),e=$("#cn");if(e)e.textContent=n};
 const cats=()=>[...new Set(P.map(p=>p.cat))];
@@ -46,7 +46,8 @@ const shrink=(f,max,q)=>new Promise((ok,no)=>{const r=new FileReader();r.onload=
 const media=v=>{const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m?`<iframe src="https://www.youtube-nocookie.com/embed/${m[1]}" title="Video sản phẩm" loading="lazy" allowfullscreen></iframe>`:`<video src="${esc(v)}" controls preload="metadata" playsinline></video>`};
 
 const me=()=>{const id=localStorage.getItem(K.ss);return rd(K.u,[]).find(x=>String(x.id)===id)||null};
-const catItems=()=>{const r=(S.cats||[]).map(c=>({...c}));cats().forEach(n=>{if(!r.some(c=>c.name===n))r.push({name:n,icon:"🛍️"})});return r};
+const DEFAULT_CATS=[{name:"Phụ kiện điện thoại",icon:"📱"},{name:"Gia dụng",icon:"🍳"},{name:"Nhà cửa & đời sống",icon:"🏠"},{name:"Thú cưng",icon:"🐾"},{name:"Ô tô - Xe máy - Xe đạp",icon:"🛵"},{name:"Đồ chơi",icon:"🧸"}];
+const catItems=()=>{const r=(S.cats||DEFAULT_CATS).map(c=>({...c}));cats().forEach(n=>{if(!r.some(c=>c.name===n))r.push({name:n,icon:"🛍️"})});return r};
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,"0")).join("");
 /* Header & footer */
 const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["lien-he.html","Liên hệ","contact"]];
@@ -70,7 +71,7 @@ const hw=$("#herowrap");if(hw&&S.heroBg){hw.style.backgroundImage=`url("${S.hero
 /* Thẻ sản phẩm + cửa sổ chi tiết */
 const imgs=p=>p.imgs||[];
 const card=p=>{const a=imgs(p)[0];return `<article class="card"><button class="lk pw" data-v="${p.id}" aria-label="Xem chi tiết ${esc(p.name)}">${a?`<img class="thumb" src="${esc(a)}" alt="${esc(p.name)}" loading="lazy" width="400" height="300">`:`<div class="thumb" style="background:hsl(${hue(p.name)} 32% 38%)">${esc(p.name[0])}</div>`}${p.video?'<span class="vb">Video</span>':""}${p.old>p.price?`<span class="sb">-${Math.round(100-p.price*100/p.old)}%</span>`:""}</button>
-<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small>${esc(p.desc)}</small><div class="price">${vnd(p.price)}${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div></div></article>`};
+<div class="b"><small>${esc(p.cat)}</small><h3>${esc(p.name)}</h3><small class="ds">${esc(p.desc)}</small><div class="price">${vnd(p.price)}${p.old>p.price?` <s class="old">${vnd(p.old)}</s>`:""}</div><button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><button class="btn sec" data-v="${p.id}">Chi tiết</button><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div></div></article>`};
 const dlg=document.createElement("dialog");dlg.className="dlg";dlg.setAttribute("aria-label","Chi tiết sản phẩm");document.body.append(dlg);
 const open=id=>{const p=P.find(x=>x.id==id);if(!p)return;const im=imgs(p);
 dlg.innerHTML=`<div class="in"><div class="main" id="mm">${im[0]?`<img src="${esc(im[0])}" alt="${esc(p.name)}">`:""}${p.video&&!im[0]?media(p.video):""}</div>
@@ -111,11 +112,11 @@ const u=new URLSearchParams(location.search),q=$("#q"),c=$("#cat"),s=$("#sort");
 c.innerHTML='<option value="">Tất cả danh mục</option>'+catItems().map(y=>y.name).map(x=>`<option>${esc(x)}</option>`).join("");
 q.value=u.get("q")||"";const sale=u.get("sale");if(sale)$("h1").textContent="Flash Sale";c.value=u.get("cat")||"";
 const bare=t=>t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase();
-const PER=(window.CFG&&+CFG.perPage)||12;let pg=Math.max(1,+u.get("page")||1);
+const PER=(window.CFG&&+CFG.perPage)||8;let pg=Math.max(1,+u.get("page")||1);
 const draw=keep=>{let r=P.filter(p=>(!sale||p.old>p.price)&&(!c.value||p.cat===c.value)&&(!q.value||bare(p.name+" "+p.desc).includes(bare(q.value))));
 if(s.value)r.sort((a,b)=>s.value==="asc"?a.price-b.price:b.price-a.price);
 const pages=Math.max(1,Math.ceil(r.length/PER));if(!keep)pg=1;pg=Math.min(pg,pages);const from=(pg-1)*PER;
-$("#count").textContent=r.length?`${r.length} sản phẩm · Trang ${pg}/${pages}`:"0 sản phẩm";
+$("#count").textContent=r.length?`Hiển thị ${from+1}–${Math.min(from+PER,r.length)} trong ${r.length} sản phẩm · Trang ${pg}/${pages}`:"0 sản phẩm";
 $("#list").innerHTML=r.slice(from,from+PER).map(card).join("")||"<p>Không tìm thấy sản phẩm phù hợp. Hãy thử từ khóa khác.</p>";
 const nu=new URLSearchParams();if(q.value)nu.set("q",q.value);if(c.value)nu.set("cat",c.value);if(sale)nu.set("sale",sale);if(pg>1)nu.set("page",pg);
 try{history.replaceState(null,"",location.pathname+(nu.toString()?"?"+nu:""))}catch(x){}
@@ -123,7 +124,9 @@ const nav=$("#pg"),nums=[];for(let i=1;i<=pages;i++)if(i===1||i===pages||Math.ab
 let h="";if(pages>1){h=`<button data-p="${pg-1}" ${pg===1?"disabled":""}>‹ Trước</button>`;let last=0;nums.forEach(i=>{if(i-last>1)h+="<span>…</span>";h+=`<button data-p="${i}" ${i===pg?'aria-current="page" class="on"':""}>${i}</button>`;last=i});h+=`<button data-p="${pg+1}" ${pg===pages?"disabled":""}>Sau ›</button>`}
 nav.innerHTML=h;
 $$("[data-p]",nav).forEach(b=>b.onclick=()=>{pg=+b.dataset.p;draw(true);$("#count").scrollIntoView({behavior:"smooth",block:"start"})})};
-[q,c,s].forEach(x=>x.addEventListener("input",()=>draw()));draw(true)}
+[q,c,s].forEach(x=>x.addEventListener("input",()=>draw()));
+const view=()=>{let l=false;try{l=localStorage.getItem("lh_view")==="list"}catch(e){}$("#list").classList.toggle("list",l);$("#vg").setAttribute("aria-pressed",String(!l));$("#vl").setAttribute("aria-pressed",String(l))};
+const sv=l=>{try{localStorage.setItem("lh_view",l?"list":"grid")}catch(e){}view()};$("#vg").onclick=()=>sv(0);$("#vl").onclick=()=>sv(1);view();draw(true)}
 
 
 if(page==="cart"){

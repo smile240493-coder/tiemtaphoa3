@@ -44,3 +44,6 @@ Trang Sản phẩm chia trang, mặc định 12 sản phẩm mỗi trang. Đổi
 3. Điền supabaseUrl và supabaseKey (Publishable key) vào js/config.js.
 4. Vào /quan-tri, đăng nhập bằng email và mật khẩu, thêm sản phẩm, ảnh, video: khách thấy ngay.
 Để trống supabaseUrl/supabaseKey thì web dùng js/data.js như trước.
+
+## Hiển thị sản phẩm
+Sản phẩm xếp ngang: 2 cột trên điện thoại, 3 cột trên máy tính bảng, 4 cột trên máy tính. Trang Sản phẩm có nút chuyển Lưới/Danh sách và phân trang đánh số (mặc định 8 sản phẩm mỗi trang, đổi ở perPage trong js/config.js).
