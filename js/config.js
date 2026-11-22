@@ -4,3 +4,5 @@ window.CFG = {
   adminPass: "haico123", /* ĐỔI mật khẩu trang quản trị */
   orderHook: "https://script.google.com/macros/s/AKfycbwA9hZocnkBW7yhzJBFyL6wme-2wO91aWrDtSfQCL_QPlB-NzNh8D43EBOeT22ZV8P-/exec"          /* Dán link Google Apps Script (kết thúc bằng /exec) để nhận đơn qua Google Sheets và Gmail */
 };
+  supabaseUrl: "sb_secret_8AUzxPm9IiNa-pqzpPkgKg_VVGT6WD7",
+  supabaseKey: "sb_publishable_m7aTXrpsIe_lTunNAMFPTg_xjhsQh0D",
