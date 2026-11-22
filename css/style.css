@@ -101,3 +101,5 @@ dialog.dlg{border:0;border-radius:var(--r);padding:0;max-width:760px;width:calc(
 .vt{display:flex;gap:6px}.vt button{border:1px solid #bccabd;background:#fff;color:var(--ink);border-radius:10px;padding:6px 12px;font:inherit;font-size:.9rem;cursor:pointer}.vt button[aria-pressed="true"]{background:var(--g);color:#fff;border-color:var(--g)}
 .grid.list{grid-template-columns:1fr}.grid.list .card{flex-direction:row}.grid.list .card>.pw{flex:0 0 38%;max-width:220px}
 .grid.list .thumb{height:100%;min-height:140px;aspect-ratio:auto}.grid.list .ds{-webkit-line-clamp:3}.grid.list .card .acts{flex-direction:row}
+
+.star{border:0;background:none;font-size:1.5rem;cursor:pointer;color:#b8c3b9;line-height:1;padding:2px 6px}.star.on{color:var(--gold)}
