@@ -1,4 +1,4 @@
-# Tiện Ích Store – Website phụ kiện điện thoại và đồ gia dụng (HTML/CSS/JS thuần)
+# Tiệm Tạp Hóa – Website phụ kiện điện thoại và đồ gia dụng (HTML/CSS/JS thuần)
 
 ## Cấu trúc
 6 trang .html · css/style.css · js/app.js · js/data.js (dữ liệu sản phẩm và ảnh nền) · robots.txt · sitemap.xml · vercel.json

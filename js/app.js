@@ -61,7 +61,7 @@ const dupKeys=()=>{const m={};P.forEach(p=>{const k=nkey(p.name);if(k)m[k]=(m[k]
 /* Header & footer */
 const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["lien-he.html","Liên hệ","contact"]];
 const cu=me();
-$("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="index.html">Tiện Ích Store</a>
+$("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="index.html">Tiệm Tạp Hóa</a>
 <div class="dd"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">☰ Danh mục</button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}">${c.icon} ${esc(c.name)}</a>`).join("")}</div></div>
 <form class="search" action="san-pham.html" role="search"><input name="q" type="search" placeholder="Tìm sản phẩm" aria-label="Tìm sản phẩm"><button class="btn gold" aria-label="Tìm">Tìm</button></form>
 <a class="cartlink" href="gio-hang.html" aria-label="Giỏ hàng">🛒<span id="cn">0</span></a>
@@ -70,7 +70,7 @@ $("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="
 [["cb","cm"],["ab","am"]].forEach(([b,m])=>{const bt=$("#"+b),mn=$("#"+m);bt.onclick=e=>{e.stopPropagation();const h=mn.hidden;$$(".menu").forEach(x=>x.hidden=true);mn.hidden=!h;bt.setAttribute("aria-expanded",String(h))}});
 document.addEventListener("click",()=>$$(".menu").forEach(x=>x.hidden=true));
 const lg=$("#lg");if(lg)lg.onclick=()=>{localStorage.removeItem(K.ss);location.href="index.html"};
-$("#ftr").innerHTML=`<div class="wrap"><div><h3>Tiện Ích Store</h3><p>Phụ kiện điện thoại và đồ gia dụng, bảo hành rõ ràng, giao toàn quốc.</p></div>
+$("#ftr").innerHTML=`<div class="wrap"><div><h3>Tiệm Tạp Hóa</h3><p>Phụ kiện điện thoại và đồ gia dụng, bảo hành rõ ràng, giao toàn quốc.</p></div>
 <div><h3>Liên kết</h3><p>${links.map(l=>`<a href="${l[0]}">${l[1]}</a>`).join("<br>")}</p></div>
 <div><h3>Liên hệ</h3><p>Thôn Tân Trà, xã Hương Đô<br><a href="tel:0989740300">0989 740 300</a><br><a href="quan-tri.html">Quản trị</a></p></div></div>`;
 badge();
@@ -98,7 +98,7 @@ dlg.innerHTML=`<div class="in"><h2>Mua ngay</h2><div class="cp"><strong>${esc(pn
 if(!dlg.open)dlg.showModal();
 $("#qx",dlg).onclick=()=>dlg.close();
 $("[name=qty]",dlg).oninput=e=>{$("#bt",dlg).textContent=vnd(unit*Math.max(1,Math.min(99,+e.target.value||1)))};
-$("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=unit*q,oid="TI"+Date.now().toString().slice(-7),its=[pname+" × "+q];
+$("#qf",dlg).onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),q=Math.max(1,Math.min(99,+f.qty||1)),tot=unit*q,oid="TH"+Date.now().toString().slice(-7),its=[pname+" × "+q];
 const b=$("#qb",dlg);b.disabled=true;b.textContent="Đang gửi đơn…";
 const O=rd(K.o,[]);O.unshift({id:oid,uid:u?u.id:null,time:new Date().toLocaleString("vi-VN"),name:f.name,phone:f.phone,addr:f.addr,note:f.note,total:tot,items:its});wr(K.o,O);
 const sent=await sendOrder({id:oid,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
@@ -157,7 +157,7 @@ ${u0?"":'<p class="note">Bạn đã có tài khoản? <a href="dang-nhap.html">�
 $$("[data-q]",box).forEach(i=>i.onchange=()=>{C[i.dataset.q]=Math.max(1,+i.value||1);saveC();draw()});
 $$("[data-rm]",box).forEach(b=>b.onclick=()=>{delete C[b.dataset.rm];saveC();draw()});
 $("#of").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const btn=$("#ob");btn.disabled=true;btn.textContent="Đang gửi đơn…";
-const O=rd(K.o,[]),id="TI"+Date.now().toString().slice(-7),its=items.map(x=>x.name+" × "+x.n);
+const O=rd(K.o,[]),id="TH"+Date.now().toString().slice(-7),its=items.map(x=>x.name+" × "+x.n);
 O.unshift({id,uid:u0?u0.id:null,time:new Date().toLocaleString("vi-VN"),...f,total:tot,items:its});wr(K.o,O);
 const sent=await sendOrder({id,name:f.name,phone:f.phone,addr:f.addr,note:f.note,website:f.website,total:tot,items:its});
 C={};saveC();draw(id,sent)}};
@@ -208,14 +208,14 @@ if(list.length)return (cat?`Sản phẩm trong "${esc(cat)}":`:"Mình tìm thấ
 return "Mình chưa hiểu rõ câu hỏi. Bạn thử gõ tên sản phẩm, hoặc hỏi về giao hàng, bảo hành, thanh toán. Hoặc nhắn nhân viên:"+contact};
 const box=document.createElement("div");box.className="cb";
 box.innerHTML=`<button class="cb-open" aria-expanded="false" aria-controls="cb-panel">🤖 Chat với shop</button>
-<section class="cb-panel" id="cb-panel" role="dialog" aria-label="Trợ lý cửa hàng" hidden><div class="cb-h"><strong>Trợ lý Tiện Ích Store</strong><button class="cb-x" aria-label="Đóng">×</button></div><div class="cb-log" id="cb-log" role="log" aria-live="polite"></div>
+<section class="cb-panel" id="cb-panel" role="dialog" aria-label="Trợ lý cửa hàng" hidden><div class="cb-h"><strong>Trợ lý Tiệm Tạp Hóa</strong><button class="cb-x" aria-label="Đóng">×</button></div><div class="cb-log" id="cb-log" role="log" aria-live="polite"></div>
 <div class="cb-qr">${["Sản phẩm nổi bật","Khuyến mãi","Giao hàng","Bảo hành","Nhân viên tư vấn"].map(q=>`<button data-q="${q}">${q}</button>`).join("")}</div>
 <form class="cb-f" id="cb-f"><input id="cb-in" placeholder="Nhập câu hỏi…" aria-label="Nhập câu hỏi" maxlength="200" autocomplete="off"><button class="btn sm">Gửi</button></form></section>`;
 document.body.append(box);
 const log=$("#cb-log",box),panel=$("#cb-panel",box),ob=$(".cb-open",box),inp=$("#cb-in",box);let started=false;
 const add=(c,h)=>{const d=document.createElement("div");d.className="m "+c;d.innerHTML=h;log.append(d);log.scrollTop=log.scrollHeight;return d};
 const ask=t=>{t=t.trim().slice(0,200);if(!t)return;add("u",esc(t));const w=add("b","…");setTimeout(()=>{w.innerHTML=reply(t);log.scrollTop=log.scrollHeight},450)};
-const toggle=o=>{panel.hidden=!o;ob.setAttribute("aria-expanded",String(o));if(o){if(!started){started=true;add("b","Xin chào! Mình là trợ lý của Tiện Ích Store. Mình có thể gợi ý sản phẩm, báo giá, giải đáp giao hàng và bảo hành.")}inp.focus()}};
+const toggle=o=>{panel.hidden=!o;ob.setAttribute("aria-expanded",String(o));if(o){if(!started){started=true;add("b","Xin chào! Mình là trợ lý của Tiệm Tạp Hóa. Mình có thể gợi ý sản phẩm, báo giá, giải đáp giao hàng và bảo hành.")}inp.focus()}};
 ob.onclick=()=>toggle(panel.hidden);$(".cb-x",box).onclick=()=>{toggle(false);ob.focus()};
 panel.addEventListener("keydown",e=>{if(e.key==="Escape"){toggle(false);ob.focus()}});
 $("#cb-f",box).onsubmit=e=>{e.preventDefault();ask(inp.value);inp.value=""};
