@@ -47,3 +47,6 @@ Trang Sản phẩm chia trang, mặc định 12 sản phẩm mỗi trang. Đổi
 
 ## Hiển thị sản phẩm
 Sản phẩm xếp ngang: 2 cột trên điện thoại, 3 cột trên máy tính bảng, 4 cột trên máy tính. Trang Sản phẩm có nút chuyển Lưới/Danh sách và phân trang đánh số (mặc định 8 sản phẩm mỗi trang, đổi ở perPage trong js/config.js).
+
+## Link riêng cho từng sản phẩm
+Mỗi sản phẩm có link dạng /p/12-ten-san-pham (api/p.js + chi-tiet.html). Link hiện đúng ảnh, tên, giá khi đăng Facebook. Trang quản trị có nút "Sao chép link" ở mỗi sản phẩm.
