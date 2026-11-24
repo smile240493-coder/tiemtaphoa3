@@ -4,6 +4,6 @@ Disallow: /quan-tri
 Disallow: /quan-tri.html
 Disallow: /dang-nhap
 Disallow: /tai-khoan
-Sitemap: https://www.pundeptrai.top/sitemap.xml
 Disallow: /chi-tiet
 Disallow: /chi-tiet.html
+Sitemap: https://www.pundeptrai.top/sitemap.xml

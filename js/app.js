@@ -60,28 +60,37 @@ const nkey=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").repl
 const dupKeys=()=>{const m={};P.forEach(p=>{const k=nkey(p.name);if(k)m[k]=(m[k]||0)+1});return new Set(Object.keys(m).filter(k=>m[k]>1))};
 const plink=p=>{const s=nkey(p.name).replace(/ /g,"-");return "/p/"+p.id+(s?"-"+s:"")};
 const copyText=async(t,btn)=>{try{await navigator.clipboard.writeText(t);if(btn){const o=btn.textContent;btn.textContent="Đã sao chép";setTimeout(()=>btn.textContent=o,1500)}}catch(e){prompt("Sao chép link này:",t)}};
+const IC={
+menu:'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>',
+cart:'<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>',
+user:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
+search:'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>',
+phone:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
+chat:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
+logo:'<svg viewBox="0 0 32 32" width="38" height="38" aria-hidden="true"><path d="M4 12 6.5 5h19L28 12z" fill="#e11d2e"/><path d="M4 12h24v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0 4 4 0 0 1-8 0z" fill="#ffc21a"/><path d="M6 17h20v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z" fill="#1f4fd8"/><rect x="13" y="20" width="6" height="8" rx="1" fill="#fff"/></svg>'};
 /* Header & footer */
 const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["lien-he.html","Liên hệ","contact"]];
 const cu=me();
-$("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="index.html">Tiệm Tạp Hóa</a>
-<div class="dd"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">☰ Danh mục</button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}">${c.icon} ${esc(c.name)}</a>`).join("")}</div></div>
-<form class="search" action="san-pham.html" role="search"><input name="q" type="search" placeholder="Tìm sản phẩm" aria-label="Tìm sản phẩm"><button class="btn gold" aria-label="Tìm">Tìm</button></form>
-<a class="cartlink" href="gio-hang.html" aria-label="Giỏ hàng">🛒<span id="cn">0</span></a>
-<div class="dd"><button class="btn sec" id="ab" aria-expanded="false" aria-controls="am">${cu?esc(cu.name.split(" ").pop()):"Tài khoản"} ▾</button><div class="menu right" id="am" hidden>${cu?`<a href="tai-khoan.html">Tài khoản của tôi</a><button id="lg">Đăng xuất</button>`:`<a href="dang-nhap.html">Đăng nhập</a><a href="dang-nhap.html#dang-ky">Đăng ký</a>`}</div></div></nav>
-<div class="sub">${links.map(l=>`<a class="${l[2]===page?"on":""}" href="${l[0]}">${l[1]}</a>`).join("")}</div>`;
+$("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="/" aria-label="Tiệm Tạp Hóa - Trang chủ">${IC.logo}<span class="lt"><b>Tiệm <i>Tạp</i> Hóa</b><small>Điện thoại · Gia dụng · Đồ tiện ích</small></span></a>
+<div class="dd dm"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">${IC.menu}<span>Danh mục</span></button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}"><span class="mi">${c.icon}</span>${esc(c.name)}</a>`).join("")}</div></div>
+<form class="search" action="san-pham.html" role="search"><input name="q" type="search" placeholder="Tìm sản phẩm bạn cần…" aria-label="Tìm sản phẩm"><button class="btn gold" aria-label="Tìm">${IC.search}<span class="stx">Tìm</span></button></form>
+<a class="cartlink" href="gio-hang.html" aria-label="Giỏ hàng">${IC.cart}<span id="cn">0</span></a>
+<div class="dd ac"><button class="btn sec" id="ab" aria-expanded="false" aria-controls="am" aria-label="Tài khoản">${IC.user}<span class="acn">${cu?esc(cu.name.split(" ").pop()):"Tài khoản"}</span></button><div class="menu right" id="am" hidden>${cu?`<a href="tai-khoan.html">Tài khoản của tôi</a><button id="lg">Đăng xuất</button>`:`<a href="dang-nhap.html">Đăng nhập</a><a href="dang-nhap.html#dang-ky">Đăng ký</a>`}</div></div></nav>
+<div class="sub">${links.map(l=>`<a class="${l[2]===page?"on":""}" href="${l[0]}"${l[2]===page?' aria-current="page"':""}>${l[1]}</a>`).join("")}</div>`;
+{const tb=document.createElement("div");tb.className="topbar";tb.innerHTML='<div class="in"><span>🚚 <b>Giao hàng toàn quốc</b> · Bảo hành rõ ràng</span><span class="tb-r">Hotline: <a href="tel:0989740300">0989 740 300</a> · Zalo: <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">0989 740 300</a></span></div>';$("#hdr").before(tb)}
 [["cb","cm"],["ab","am"]].forEach(([b,m])=>{const bt=$("#"+b),mn=$("#"+m);bt.onclick=e=>{e.stopPropagation();const h=mn.hidden;$$(".menu").forEach(x=>x.hidden=true);mn.hidden=!h;bt.setAttribute("aria-expanded",String(h))}});
 document.addEventListener("click",()=>$$(".menu").forEach(x=>x.hidden=true));
 const lg=$("#lg");if(lg)lg.onclick=()=>{localStorage.removeItem(K.ss);location.href="index.html"};
-$("#ftr").innerHTML=`<div class="wrap"><div><h3>Tiệm Tạp Hóa</h3><p>Phụ kiện điện thoại và đồ gia dụng, bảo hành rõ ràng, giao toàn quốc.</p></div>
+$("#ftr").innerHTML=`<div class="wrap"><div><h3>Tiệm Tạp Hóa</h3><p>Điện thoại, gia dụng và đồ tiện ích chọn lọc. Bảo hành rõ ràng, giao hàng toàn quốc, hỗ trợ tận tâm.</p></div>
 <div><h3>Liên kết</h3><p>${links.map(l=>`<a href="${l[0]}">${l[1]}</a>`).join("<br>")}</p></div>
-<div><h3>Liên hệ</h3><p>Thôn Tân Trà, xã Hương Đô<br><a href="tel:0989740300">0989 740 300</a><br><a href="quan-tri.html">Quản trị</a></p></div></div>`;
+<div><h3>Liên hệ</h3><p>📍 Thôn Tân Trà, xã Hương Đô<br>📞 <a href="tel:0989740300">0989 740 300</a><br>💬 <a href="https://zalo.me/0989740300" target="_blank" rel="noopener">Chat Zalo</a><br><a href="quan-tri.html">Quản trị</a></p></div></div><div class="copy">© ${new Date().getFullYear()} Tiệm Tạp Hóa · Hotline 0989 740 300</div>`;
 badge();
-const fab=document.createElement("div");fab.className="fab";fab.innerHTML='<a class="f1" href="tel:0989740300" aria-label="Gọi ngay 0989 740 300">📞 Gọi ngay</a><a class="f2" href="https://zalo.me/0989740300" target="_blank" rel="noopener" aria-label="Chat Zalo">💬 Zalo</a>';document.body.append(fab);
+const fab=document.createElement("div");fab.className="fab";fab.innerHTML=`<a class="fb fb-call" href="tel:0989740300" aria-label="Gọi ngay 0989 740 300"><span class="fi">${IC.phone}</span><span>Gọi ngay</span></a><a class="fb fb-zalo" href="https://zalo.me/0989740300" target="_blank" rel="noopener" aria-label="Chat Zalo"><span class="fi">Zalo</span><span>Chat Zalo</span></a>`;document.body.append(fab);
 const hw=$("#herowrap");if(hw&&S.heroBg){hw.style.backgroundImage=`url("${S.heroBg.replace(/"/g,"%22")}")`;hw.classList.add("hasbg")}
 
 /* Thẻ sản phẩm + cửa sổ chi tiết */
 const imgs=p=>p.imgs||[];
-const card=p=>{const a=imgs(p)[0];return `<article class="card"><a class="lk pw" href="${plink(p)}" aria-label="Xem chi tiết ${esc(p.name)}">${a?`<img class="thumb" src="${esc(a)}" alt="${esc(p.name)}" loading="lazy" width="400" height="300">`:`<div class="thumb" style="background:hsl(${hue(p.name)} 32% 38%)">${esc(p.name[0])}</div>`}${p.video?'<span class="vb">Video</span>':""}${p.old>p.price?`<span class="sb">-${Math.round(100-p.price*100/p.old)}%</span>`:""}</a>
+const card=p=>{const a=imgs(p)[0];return `<article class="card"><a class="lk pw" href="${plink(p)}" aria-label="Xem chi tiết ${esc(p.name)}">${a?`<img class="thumb" src="${esc(a)}" alt="${esc(p.name)}" loading="lazy" width="400" height="300">`:`<div class="thumb" style="background:hsl(${hue(p.name)} 68% 54%)">${esc(p.name[0])}</div>`}${p.video?'<span class="vb">Video</span>':""}${p.old>p.price?`<span class="sb">-${Math.round(100-p.price*100/p.old)}%</span>`:""}</a>
 <div class="b"><small>${esc(p.cat)}${isNew(p)?' · <b class="new">Mới</b>':""}</small><h3><a class="tl" href="${plink(p)}">${esc(p.name)}</a></h3><small class="ds">${esc(p.desc)}</small><div class="price">${vItems(p).length?fromPrice(p):vnd(p.price)}${p.old>p.price&&!vItems(p).length?` <s class="old">${vnd(p.old)}</s>`:""}</div>${vItems(p).length?`<a class="btn gold buy" href="${plink(p)}">Chọn phân loại</a>`:`<button class="btn gold buy" data-buy="${p.id}">Mua ngay</button><div class="acts"><a class="btn sec" href="${plink(p)}">Chi tiết</a><button class="btn" data-add="${p.id}">Thêm vào giỏ</button></div>`}</div></article>`};
 const dlg=document.createElement(page==="detail"?"div":"dialog");dlg.className="dlg";dlg.setAttribute("aria-label","Chi tiết sản phẩm");
 if(page==="detail"){dlg.open=true;dlg.showModal=()=>{};dlg.close=()=>{if(dlg.dataset.pid)open(dlg.dataset.pid)};$("#pd").append(dlg)}else document.body.append(dlg);
@@ -212,7 +221,7 @@ const list=cat?P.filter(p=>p.cat===cat).slice(0,4):find(n);
 if(list.length)return (cat?`Sản phẩm trong "${esc(cat)}":`:"Mình tìm thấy:")+list.map(row).join("")+`<a href="san-pham.html${cat?"?cat="+encodeURIComponent(cat):"?q="+encodeURIComponent(raw)}">Xem thêm trên trang sản phẩm</a>`;
 return "Mình chưa hiểu rõ câu hỏi. Bạn thử gõ tên sản phẩm, hoặc hỏi về giao hàng, bảo hành, thanh toán. Hoặc nhắn nhân viên:"+contact};
 const box=document.createElement("div");box.className="cb";
-box.innerHTML=`<button class="cb-open" aria-expanded="false" aria-controls="cb-panel">🤖 Chat với shop</button>
+box.innerHTML=`<button class="cb-open" aria-expanded="false" aria-controls="cb-panel"><span class="fi">${IC.chat}</span><span>Chat với shop</span></button>
 <section class="cb-panel" id="cb-panel" role="dialog" aria-label="Trợ lý cửa hàng" hidden><div class="cb-h"><strong>Trợ lý Tiệm Tạp Hóa</strong><button class="cb-x" aria-label="Đóng">×</button></div><div class="cb-log" id="cb-log" role="log" aria-live="polite"></div>
 <div class="cb-qr">${["Sản phẩm nổi bật","Khuyến mãi","Giao hàng","Bảo hành","Nhân viên tư vấn"].map(q=>`<button data-q="${q}">${q}</button>`).join("")}</div>
 <form class="cb-f" id="cb-f"><input id="cb-in" placeholder="Nhập câu hỏi…" aria-label="Nhập câu hỏi" maxlength="200" autocomplete="off"><button class="btn sm">Gửi</button></form></section>`;
