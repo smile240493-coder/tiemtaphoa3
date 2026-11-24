@@ -69,7 +69,7 @@ phone:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="
 chat:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
 logo:'<svg viewBox="0 0 32 32" width="38" height="38" aria-hidden="true"><path d="M4 12 6.5 5h19L28 12z" fill="#e11d2e"/><path d="M4 12h24v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0 4 4 0 0 1-8 0z" fill="#ffc21a"/><path d="M6 17h20v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z" fill="#1f4fd8"/><rect x="13" y="20" width="6" height="8" rx="1" fill="#fff"/></svg>'};
 /* Header & footer */
-const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["lien-he.html","Liên hệ","contact"]];
+const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["/game","Giải trí","game"],["lien-he.html","Liên hệ","contact"]];
 const cu=me();
 $("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="/" aria-label="Tiệm Tạp Hóa - Trang chủ">${IC.logo}<span class="lt"><b>Tiệm <i>Tạp</i> Hóa</b><small>Điện thoại · Gia dụng · Đồ tiện ích</small></span></a>
 <div class="dd dm"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">${IC.menu}<span>Danh mục</span></button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}"><span class="mi">${c.icon}</span>${esc(c.name)}</a>`).join("")}</div></div>
@@ -204,6 +204,7 @@ const FAQ=[
 [["thanh toan","chuyen khoan","cod","tra tien"],"Bạn có thể thanh toán khi nhận hàng (COD) hoặc chuyển khoản. Nhân viên sẽ gọi xác nhận đơn trước khi giao."],
 [["dia chi","o dau","cua hang","gio mo","mo cua","may gio"],"Cửa hàng ở Thôn Tân Trà, xã Hương Đô. Mở cửa 8:00 – 21:00 mỗi ngày."],
 [["dat hang","mua hang","cach mua","gio hang"],"Cách đặt hàng: chọn sản phẩm, bấm \"Thêm vào giỏ\", vào Giỏ hàng, điền họ tên, số điện thoại, địa chỉ rồi bấm \"Đặt hàng\". Cửa hàng sẽ gọi xác nhận."],
+[["game","tro choi","giai tri","choi game"],"Tiệm Tạp Hóa có khu Giải trí với các game miễn phí: lật hình, rắn săn mồi, 2048 và cờ ca-rô. Bạn bấm mục Giải trí trên thanh menu để chơi nhé."],
 [["tai khoan","dang ky","dang nhap","mat khau"],"Bạn có thể đăng ký hoặc đăng nhập ở menu Tài khoản trên đầu trang để lưu thông tin và xem lại đơn hàng."]];
 const STOP=new Set("cho toi can mua gia bao nhieu la co khong shop ban minh xem tim ve cua cac nhung mot cai chiec nay do nao o san pham hoi".split(" "));
 const find=n=>{const ks=n.split(" ").filter(w=>w.length>1&&!STOP.has(w));if(!ks.length)return[];

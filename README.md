@@ -50,3 +50,8 @@ Sản phẩm xếp ngang: 2 cột trên điện thoại, 3 cột trên máy tín
 
 ## Link riêng cho từng sản phẩm
 Mỗi sản phẩm có link dạng /p/12-ten-san-pham (api/p.js + chi-tiet.html). Link hiện đúng ảnh, tên, giá khi đăng Facebook. Trang quản trị có nút "Sao chép link" ở mỗi sản phẩm.
+
+## Khu giải trí (thư mục game/)
+Trang /game có 4 game chạy ngay trong trình duyệt, miễn phí, không cần máy chủ: lật hình, rắn săn mồi, 2048, cờ ca-rô.
+Mỗi game gồm một file .html và một file .js cùng tên trong thư mục game/. Điểm cao lưu trên máy người chơi (localStorage).
+Muốn thêm game mới: copy một cặp file, sửa nội dung, rồi thêm thẻ vào game/index.html và dòng vào sitemap.xml.

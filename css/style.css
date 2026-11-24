@@ -201,3 +201,7 @@ footer .copy{border-top:1px solid rgba(255,255,255,.12);text-align:center;paddin
 .card .btn{font-size:.88rem}.ct{flex:1 0 112px;font-size:.86rem}
 .topbar .in{font-size:.78rem}
 }
+
+/* Khung mời chơi game ở trang chủ */
+.gpromo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 24px;border-radius:20px;background:linear-gradient(135deg,#eaf1ff,#fff3df);border:1px solid var(--line)}
+.gpromo h2{margin:0 0 4px;font-size:1.2rem}.gpromo p{margin:0;color:var(--mut)}
