@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Câu Cá Đài Dịch Vụ 3D</title>
+<style>
+:root{color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#08121e;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;touch-action:none}
+#c{position:fixed;inset:0;display:block}
+.glass{background:rgba(8,18,30,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.28)}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+
+/* ---------- TOP ---------- */
+#top{position:fixed;top:calc(6px + env(safe-area-inset-top));left:6px;right:6px;z-index:30;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+#topRow{display:flex;gap:5px;align-items:stretch;pointer-events:auto;flex-wrap:wrap}
+#hudWx{padding:6px 9px;font-size:10.5px;line-height:1.45;min-width:150px;max-width:240px}
+#hudWx b{font-size:12px;color:#ffd54a;display:block}
+#hudWx .sub{color:#8fc9ff;font-size:9.5px}
+.chip{padding:6px 10px;font-size:12px;font-weight:700;color:#ffd54a;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.chip.sess{color:#ffb4a4;font-weight:600;font-size:11.5px}
+#btnsTop{display:flex;gap:4px;margin-left:auto;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+.tIcon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:9px;background:rgba(12,26,42,.65);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);color:#fff}
+.tIcon:active{background:rgba(245,185,66,.4)}
+
+/* ---------- FLOAT ZOOM ---------- */
+#floatBox{position:fixed;right:8px;top:calc(96px + env(safe-area-inset-top));width:104px;z-index:26;padding:5px;display:flex;flex-direction:column;align-items:center;cursor:grab;touch-action:none}
+#floatBox:active{cursor:grabbing}
+#fcan{width:38px;height:250px;display:block}
+#floatBox .label{font-size:8.5px;color:#bcd;text-align:center;line-height:1.3;margin-top:3px;pointer-events:none}
+
+/* ---------- STATUS TEXT ---------- */
+#hookText{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%) scale(.8);z-index:18;color:#4dff9b;font-weight:900;font-size:30px;letter-spacing:1px;text-shadow:0 0 18px rgba(0,0,0,.9),0 0 30px #0f6;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+#hookText.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#rigLine{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(120px + env(safe-area-inset-bottom));z-index:20;width:min(560px,94%);text-align:center;font-size:11px;line-height:1.4;padding:5px 10px;background:rgba(0,0,0,.55);color:#ffe9c0;border-radius:8px;backdrop-filter:blur(6px);pointer-events:none}
+#chatBox{position:fixed;left:6px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:16;font-size:10.5px;line-height:1.35;color:#d6f6ff;padding:6px 10px;background:rgba(0,26,44,.6);border-radius:9px;max-width:70%;backdrop-filter:blur(8px);border-left:2px solid #4ad;pointer-events:none;transition:opacity .4s}
+
+/* ---------- FIGHT ---------- */
+#fight{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));width:min(430px,94%);z-index:32;padding:9px 12px;display:none}
+#fight .who{font-size:11.5px;margin-bottom:6px;color:#ffe9a0;display:flex;justify-content:space-between}
+#tWrap{height:15px;background:#0b0b12;border-radius:8px;border:1px solid #333;overflow:hidden;position:relative}
+#tZone{position:absolute;right:0;width:16%;top:0;bottom:0;background:rgba(255,60,60,.5);border-left:2px solid #f33}
+#tBar{height:100%;width:40%;background:linear-gradient(90deg,#2fbf71,#ffd54a 60%,#ff5252);transition:width .08s linear;border-radius:8px}
+#fight .acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}
+.fbtn{padding:10px 0;text-align:center;font-weight:800;font-size:11.5px;border-radius:9px;color:#fff}
+#btnPump{background:linear-gradient(#2e8b57,#1f6b40)}
+#btnBail{background:linear-gradient(#b23b3b,#822)}
+#btnNet{background:linear-gradient(#1f6fbf,#14508c)}
+.fbtn:active{filter:brightness(1.35)}
+.fbtn.dim{opacity:.42}
+
+/* ---------- BOTTOM BAR ---------- */
+#bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:3px;justify-content:space-around;padding:5px 3px calc(5px + env(safe-area-inset-bottom));background:rgba(4,11,19,.86);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.1)}
+.tbtn{flex:1;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5px;color:#cfe3f5;padding:5px 1px;border-radius:10px;line-height:1.15}
+.tbtn .i{font-size:19px;line-height:1}
+.tbtn:active,.tbtn.on{background:rgba(245,185,66,.32);color:#fff}
+#baitChip{position:fixed;left:6px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:35;font-size:10px;padding:4px 9px;background:rgba(0,0,0,.5);border-radius:7px;color:#cfe9ff;backdrop-filter:blur(6px)}
+
+/* ---------- MODAL ---------- */
+#modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:12px}
+#modal.on{display:flex}
+#sheet{width:min(540px,97%);max-height:82vh;overflow-y:auto;padding:14px 15px 18px;font-size:12.5px;line-height:1.5}
+#sheet h3{color:#ffd54a;font-size:15px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+#sheet h3 .x{font-size:16px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.1)}
+#sheet p.note{color:#8fc9ff;font-size:11px;margin:6px 0 9px}
+#sheet h4{color:#ffcf8a;font-size:12.5px;margin:12px 0 6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:9px;padding:8px 10px;margin-bottom:6px}
+.row small{display:block;color:#9ab;font-size:10.5px}
+.row .r{color:#ffd54a;font-weight:700;white-space:nowrap}
+.pillwrap{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0 8px}
+.pill{padding:6px 10px;border-radius:14px;background:rgba(255,255,255,.1);font-size:11px;color:#dfe}
+.pill.on{background:#f5b942;color:#111;font-weight:800}
+.buy{padding:6px 11px;border-radius:8px;background:#2e7d32;color:#fff;font-weight:800;font-size:11px;white-space:nowrap}
+.buy.no{background:#444;color:#888}
+.buy.sell{background:#b7791f}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.spot{padding:8px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:11px;text-align:left;line-height:1.35;color:#e6f2ff}
+.spot.sel{border-color:#f5b942;background:rgba(245,185,66,.2)}
+.spot b{color:#9fe6ff}
+.bar{height:6px;background:#12202e;border-radius:4px;overflow:hidden;margin-top:5px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#2fbf71,#ffd54a)}
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:80;background:rgba(6,14,24,.9);color:#ffd54a;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;border:1px solid rgba(245,185,66,.35);max-width:86%;text-align:center;backdrop-filter:blur(10px)}
+#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* ---------- TOUCH JOYSTICK ---------- */
+#joy{position:fixed;left:0;bottom:70px;width:150px;height:150px;z-index:50;display:none}
+#joy.on{display:block}
+#joyBase{position:absolute;left:16px;bottom:16px;width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25)}
+#joyKnob{position:absolute;left:40px;bottom:40px;width:48px;height:48px;border-radius:50%;background:rgba(245,185,66,.6)}
+#walkBtn{position:fixed;left:10px;bottom:calc(290px + env(safe-area-inset-bottom));z-index:36;padding:7px 11px;font-size:11px;border-radius:10px;background:rgba(12,30,48,.7);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px);display:none}
+#walkBtn.on{display:block;background:rgba(245,185,66,.4)}
+@media (max-width:620px){
+  #hudWx{font-size:9.5px;max-width:150px;min-width:0;padding:5px 7px}
+  #hudWx b{font-size:10.5px}
+  #btnsTop .tIcon{width:29px;height:29px;font-size:14px}
+  #floatBox{width:88px;top:calc(86px + env(safe-area-inset-top))}
+  #fcan{width:32px;height:200px}
+  .tbtn .i{font-size:17px}
+  .tbtn{font-size:9px}
+  #hookText{font-size:24px}
+}
+@media (max-height:560px){#floatBox{height:auto}#fcan{height:150px}}
+
+/* ---------- LOADING / ERROR ---------- */
+#boot{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:#08121e;color:#ffd54a;font-size:14px;font-weight:700;letter-spacing:.5px;transition:opacity .5s;text-align:center;padding:20px}
+#boot.off{opacity:0;pointer-events:none}
+#errBox{position:fixed;left:8px;right:8px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:95;display:none;background:rgba(120,20,20,.94);color:#fff;font-size:11.5px;line-height:1.45;padding:9px 11px;border-radius:10px;border:1px solid #ff8a8a;white-space:pre-wrap;word-break:break-word;max-height:40vh;overflow:auto}
+#errBox.on{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- TOP -->
+<div id="top">
+  <div id="topRow">
+    <div id="hudWx" class="glass"><b>Đang tải…</b><span class="sub">Đồng bộ thời tiết</span></div>
+    <div id="moneyChip" class="glass chip">💰 600k</div>
+    <div id="sessChip" class="glass chip sess">⏱ Ca câu 4:00:00</div>
+    <div id="btnsTop">
+      <button class="tIcon" data-open="bait" title="Cần & Mồi">🎣</button>
+      <button class="tIcon" data-open="quest" title="Nhiệm vụ">📋</button>
+      <button class="tIcon" data-open="shop" title="Cửa hàng">🛒</button>
+      <button class="tIcon" data-open="basket" title="Giỏ cá">🎒</button>
+      <button class="tIcon" data-open="anglers" title="Cần thủ">👥</button>
+      <button class="tIcon" id="fsBtn" title="Toàn màn hình">⛶</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOAT ZOOM -->
+<div id="floatBox" class="glass">
+  <canvas id="fcan" width="80" height="500"></canvas>
+  <div class="label">⠿ Dời khung phao tùy thích</div>
+</div>
+
+<div id="hookText">Trúng ổ</div>
+<div id="rigLine">Đang câu đáy chạm · mồi dưới chạm đáy</div>
+<div id="chatBox">Chào mừng tới hồ dịch vụ Triệu Tâm! Chạm mặt nước để giật khi phao báo.</div>
+<div id="baitChip">🪱 Chậu mồi: 110 lần · xả chưa trộn</div>
+<button id="walkBtn">🚶 Đi dạo</button>
+
+<!-- FIGHT -->
+<div id="fight" class="glass">
+  <div class="who"><span id="fName">🐟 Cá đang kéo…</span><span id="fTimer">0.0s</span></div>
+  <div id="tWrap"><div id="tZone"></div><div id="tBar"></div></div>
+  <div class="acts">
+    <button class="fbtn" id="btnPump">GIẬT / KÉO</button>
+    <button class="fbtn" id="btnBail">DÂY BH</button>
+    <button class="fbtn dim" id="btnNet">XÚC VỢT</button>
+  </div>
+</div>
+
+<!-- BOTTOM -->
+<div id="bottom">
+  <button class="tbtn" data-open="map"><span class="i">🗺️</span>Sơ đồ</button>
+  <button class="tbtn" data-open="rig"><span class="i">⚖️</span>Cân phao</button>
+  <button class="tbtn" data-open="bait"><span class="i">🥣</span>Trộn mồi</button>
+  <button class="tbtn" data-open="chum"><span class="i">🎯</span>Kẹp xả</button>
+  <button class="tbtn" data-open="cam"><span class="i">🎥</span>Góc nhìn</button>
+  <button class="tbtn" data-open="nb"><span class="i">👀</span>Hàng xóm</button>
+</div>
+
+<div id="joy"><div id="joyBase"></div><div id="joyKnob"></div></div>
+<div id="modal"><div id="sheet" class="glass"></div></div>
+<div id="toast"></div>
+<div id="errBox"></div>
+<div id="boot">🎣 Đang tải hồ câu…</div>
+
+<script type="module">
+/* ---------- nạp Three.js với nhiều CDN dự phòng ---------- */
+const errBox = document.getElementById('errBox');
+function fatal(msg){
+  errBox.textContent = '⚠️ ' + msg +
+    '\n\nLưu ý: file cần được TẢI VỀ rồi mở bằng Chrome/Safari và có internet cho lần chạy đầu.';
+  errBox.classList.add('on');
+  const b = document.getElementById('boot'); if(b) b.classList.add('off');
+}
+window.addEventListener('error', e => fatal(e.message || 'Lỗi script'));
+window.addEventListener('unhandledrejection', e =>
+  fatal(String((e.reason && e.reason.message) || e.reason || 'Lỗi promise')));
+
+let THREE = null;
+try{
+  THREE = await Promise.any([
+    'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+    'https://unpkg.com/three@0.160.0/build/three.module.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js'
+  ].map(u => import(u).then(m => { if(!m || !m.WebGLRenderer) throw new Error('bad module'); return m; })));
+}catch(e){
+  fatal('Không tải được thư viện 3D Three.js từ CDN.');
+  throw e;
+}
+
+/* =========================================================
+   1. CONFIG / STATE
+   ========================================================= */
+const RODS   = [{n:'Cần đài 3H',p:0,len:3},{n:'Cần đài 5H',p:350000,len:5},{n:'Cần đài 8H',p:900000,len:8}];
+const REELS  = [{n:'Trục & Thẻo 1.0',p:0,load:1.0},{n:'Trục 2.5',p:250000,load:1.7},{n:'Trục 5.0',p:700000,load:2.6}];
+const FLOATS = [{n:'Phao tăm nhạy',p:0},{n:'Phao bầu chống sóng',p:150000},{n:'Phao LED đêm',p:400000}];
+const BAITS  = [
+  {n:'Cám tanh',  f:'Rô phi',      color:0xc9a06a},
+  {n:'Cám thơm',  f:'Chép',        color:0xe0c36a},
+  {n:'Ngô/Khoai', f:'Trắm',        color:0xf0e090},
+  {n:'Mồi chua',  f:'Mè/Trôi',     color:0xb08a60}
+];
+const FLAVORS = [{n:'Sữa non',p:50000},{n:'Trứng sữa',p:60000},{n:'Mật khoai',p:40000},{n:'Dâu tây',p:50000}];
+const RIGS = [
+  {n:'Câu linh (nhạy)', desc:'mồi dưới chạm đáy — chìm dứt khoát hoặc đỡ lên rồi dừng thì chạm giật', sens:1.35},
+  {n:'Câu đáy chạm 1 kim', desc:'chìm 1 nấc là cá ăn — tụt nhẹ để 2 nhịp rồi giật', sens:1.05},
+  {n:'Câu đáy 2 kim', desc:'phao nằm 2 nấc — chờ tụt dứt khoát hoặc trồi vàng mới giật', sens:0.85},
+  {n:'Câu lửng', desc:'mồi lơ lửng giữa nước — trồi lên 2–3 nấc là tín hiệu vàng', sens:1.1}
+];
+const FISH = [
+  /* v = giá thu mua đ/g */
+  {n:'Rô phi đen',   min:180, max:1200, bait:0, w:24, str:0.55, v:280, col:'#8a6a4a'},
+  {n:'Rô phi Đằng',  min:900, max:2600, bait:0, w:10, str:0.75, v:420, col:'#5a7a8a'},
+  {n:'Cá tra',       min:1800,max:9500, bait:0, w:9,  str:1.15, v:220, col:'#6a7a8a'},
+  {n:'Cá lăng vàng', min:1200,max:5200, bait:0, w:6,  str:0.95, v:520, col:'#c8a040'},
+  {n:'Cá chép',      min:700, max:4200, bait:1, w:20, str:0.8,  v:300, col:'#a8763a'},
+  {n:'Chép viền',    min:2500,max:11000,bait:1, w:6,  str:1.1,  v:600, col:'#d0a040'},
+  {n:'Chép trắng',   min:800, max:3000, bait:1, w:8,  str:0.7,  v:380, col:'#c0c8cc'},
+  {n:'Trắm cỏ',      min:1400,max:7500, bait:2, w:13, str:1.0,  v:260, col:'#5a7a4a'},
+  {n:'Trắm đen',     min:3000,max:12000,bait:2, w:5,  str:1.25, v:480, col:'#3a4a3a'},
+  {n:'Cá trôi',      min:150, max:900,  bait:3, w:12, str:0.5,  v:320, col:'#b0b8c0'},
+  {n:'Trôi dế',      min:300, max:1400, bait:3, w:7,  str:0.6,  v:450, col:'#7a8a90'},
+  {n:'Cá mè',        min:100, max:600,  bait:3, w:8,  str:0.45, v:240, col:'#9ab0c0'},
+  {n:'Mè hoa',       min:400, max:1600, bait:3, w:6,  str:0.6,  v:400, col:'#b8c8d8'}
+];
+const SPOTS = [
+  {n:'Bờ kè sâu',        d:3.5, target:'Chép / Trắm cũ',  x:-15, bite:1.0},
+  {n:'Gần khóm sen',     d:1.8, target:'Rô phi / Chép',   x:-5,  bite:1.15},
+  {n:'Góc sục khí oxy',  d:2.5, target:'Cá đi ăn bầy',    x:5,   bite:1.25},
+  {n:'Bãi cạn',          d:1.2, target:'Cá nhát',         x:15,  bite:0.85}
+];
+const NEIGHBORS = ['anh Vũ (Ô 15)','chị Hồng (Ô 14)','anh Tuấn (Ô 16)','bác Tư (Ô 13)'];
+const DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+
+const S = {
+  money: 600000,
+  sessionLeft: 4*3600,
+  baits: 110,
+  chumMixed: false,
+  spot: 1,
+  rig: 0,
+  baitType: 0,
+  flavor: -1,
+  rodLvl: 0, reelLvl: 0, floatLvl: 0,
+  cam: 0,
+  walking: false,
+  fishing: true,
+  hooked: false,
+  phase: 'idle',           // idle | nibble | sink | rise | drift
+  floatOff: 0,
+  biteWindow: 0,
+  pending: null,
+  tension: 0.4,
+  fightT: 0,
+  bail: 0,
+  basket: [],
+  records: {},
+  questsClaimed: {},
+  chumT: 0,
+  wxMode: 'live',
+  wxTest: 'sun',
+  effBite: 1,
+  windPush: 0,
+  night: false
+};
+
+/* =========================================================
+   2. AUDIO (Web Audio API)
+   ========================================================= */
+let AC = null;
+function ac(){
+  if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(freq, dur, type='sine', vol=0.14, slideTo){
+  const a = ac(); if(!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, a.currentTime);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+  g.gain.setValueAtTime(vol, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0008, a.currentTime+dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime+dur+0.02);
+}
+function noiseSplash(dur=0.45, vol=0.28){
+  const a = ac(); if(!a) return;
+  const len = Math.floor(a.sampleRate*dur);
+  const buf = a.createBuffer(1, len, a.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++){
+    const k = i/len;
+    d[i] = (Math.random()*2-1) * Math.pow(1-k,2.2) * (0.6+0.4*Math.sin(k*40));
+  }
+  const src = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter();
+  f.type='bandpass'; f.frequency.value=900; f.Q.value=0.7;
+  g.gain.value = vol;
+  src.buffer = buf; src.connect(f); f.connect(g); g.connect(a.destination); src.start();
+}
+function sfxCast(){ noiseSplash(0.25,0.12); tone(420,0.18,'sine',0.05,180); }
+function sfxPlop(){ noiseSplash(0.5,0.32); tone(160,0.22,'sine',0.12,70); }
+function sfxBell(){ tone(1046,0.16,'sine',0.13); setTimeout(()=>tone(1318,0.22,'sine',0.12),120); setTimeout(()=>tone(1568,0.4,'sine',0.1),250); }
+function sfxWhoosh(){ tone(900,0.22,'sawtooth',0.06,220); }
+function sfxStrike(){ tone(620,0.06,'square',0.11); }
+function sfxFail(){ tone(220,0.35,'sawtooth',0.14,90); }
+
+/* ambient water loop */
+let ambStarted = false;
+function startAmbience(){
+  if(ambStarted) return; const a = ac(); if(!a) return; ambStarted = true;
+  const len = a.sampleRate*3;
+  const buf = a.createBuffer(1,len,a.sampleRate); const d = buf.getChannelData(0);
+  let last = 0;
+  for(let i=0;i<len;i++){ const w = Math.random()*2-1; last = (last + 0.02*w)/1.02; d[i] = last*3; }
+  const src = a.createBufferSource(); src.buffer = buf; src.loop = true;
+  const g = a.createGain(); g.gain.value = 0.035;
+  const f = a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=600;
+  src.connect(f); f.connect(g); g.connect(a.destination); src.start();
+}
+
+/* =========================================================
+   3. THREE.JS WORLD
+   ========================================================= */
+const canvas = document.getElementById('c');
+let renderer;
+try{
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+}catch(e){
+  fatal('Thiết bị/trình duyệt này không bật được WebGL 3D.');
+  throw e;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = false;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8ec6e8);
+scene.fog = new THREE.Fog(0x8ec6e8, 55, 200);
+
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
+
+function resize(){
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect = w/h;
+  // portrait: widen fov so scene reads well
+  camera.fov = w < h ? 68 : 55;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* lights */
+const sun = new THREE.DirectionalLight(0xffffff, 1.25);
+sun.position.set(28,40,18); scene.add(sun);
+const ambient = new THREE.AmbientLight(0x9fc0ff, 0.55); scene.add(ambient);
+const hemi = new THREE.HemisphereLight(0xcfe4ff, 0x3c5a3c, 0.55); scene.add(hemi);
+
+/* =========================================================
+   3b. SKY DOME · SUN · MOON · STARS · CLOUDS
+   ========================================================= */
+function makeSkyTex(top, bot){
+  const cv = document.createElement('canvas'); cv.width = 4; cv.height = 256;
+  const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0,0,0,256);
+  g.addColorStop(0, top); g.addColorStop(0.55, bot); g.addColorStop(1, bot);
+  c.fillStyle = g; c.fillRect(0,0,4,256);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(190, 24, 16),
+  new THREE.MeshBasicMaterial({map: makeSkyTex('#3f8fd6','#bfe4f5'), side: THREE.BackSide, depthWrite:false, fog:false})
+);
+skyDome.renderOrder = -10;
+scene.add(skyDome);
+
+const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(6.2, 18, 14),
+  new THREE.MeshBasicMaterial({color:0xfff6c8, fog:false, transparent:true, opacity:0.95}));
+scene.add(sunMesh);
+const sunHalo = new THREE.Mesh(new THREE.SphereGeometry(13, 18, 14),
+  new THREE.MeshBasicMaterial({color:0xffe9a0, fog:false, transparent:true, opacity:0.22, blending:THREE.AdditiveBlending, depthWrite:false}));
+scene.add(sunHalo);
+const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(4.4, 18, 14),
+  new THREE.MeshBasicMaterial({color:0xe2ecff, fog:false, transparent:true, opacity:0}));
+scene.add(moonMesh);
+
+/* stars */
+const STAR_N = 420;
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(STAR_N*3);
+for(let i=0;i<STAR_N;i++){
+  const u = Math.random()*Math.PI*2, v = 0.06 + Math.random()*0.9;
+  const rad = Math.cos(v*Math.PI/2)*172;
+  starPos[i*3]   = Math.cos(u)*rad;
+  starPos[i*3+1] = Math.sin(v*Math.PI/2)*172 + 10;
+  starPos[i*3+2] = Math.sin(u)*rad;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+  color:0xffffff, size:1.5, transparent:true, opacity:0, fog:false, depthWrite:false
+}));
+stars.frustumCulled = false;
+scene.add(stars);
+
+/* clouds */
+const clouds = [];
+for(let i=0;i<6;i++){
+  const g = new THREE.Group();
+  const n = 3 + (i%3);
+  for(let k=0;k<n;k++){
+    const m = new THREE.Mesh(new THREE.SphereGeometry(3.4 + Math.random()*3.6, 8, 6),
+      new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:0.82, fog:false, depthWrite:false}));
+    m.position.set((k-(n-1)/2)*4.4 + (Math.random()-0.5)*2, Math.random()*1.8, (Math.random()-0.5)*3);
+    m.scale.y = 0.5;
+    g.add(m);
+  }
+  g.position.set(-80 + i*27, 27 + Math.random()*15, -60 - Math.random()*55);
+  scene.add(g);
+  clouds.push({g, sp: 0.5 + Math.random()*0.8});
+}
+
+/* sun glitter on the water */
+const SPARK_N = 220;
+const sparkGeo = new THREE.BufferGeometry();
+const sparkPos = new Float32Array(SPARK_N*3);
+const sparkSeed = new Float32Array(SPARK_N);
+for(let i=0;i<SPARK_N;i++){
+  sparkPos[i*3]   = (Math.random()-0.5)*95;
+  sparkPos[i*3+1] = 0.16;
+  sparkPos[i*3+2] = -8 - Math.random()*62;
+  sparkSeed[i] = Math.random()*Math.PI*2;
+}
+sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos,3));
+const sparks = new THREE.Points(sparkGeo, new THREE.PointsMaterial({
+  color:0xdff6ff, size:0.24, transparent:true, opacity:0.38,
+  blending:THREE.AdditiveBlending, depthWrite:false
+}));
+sparks.frustumCulled = false;
+scene.add(sparks);
+
+/* foam rings (chum splash / landing) */
+const foamRings = [];
+for(let i=0;i<4;i++){
+  const r = new THREE.Mesh(new THREE.RingGeometry(0.55,0.76,26),
+    new THREE.MeshBasicMaterial({color:0xe8f8ff, transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false}));
+  r.rotation.x = -Math.PI/2; r.position.y = 0.14; r.visible = false;
+  r.userData = {life:0, max:1};
+  scene.add(r); foamRings.push(r);
+}
+function splashRing(x, z, scale){
+  const r = foamRings.find(f => f.userData.life <= 0) || foamRings[0];
+  r.position.set(x, 0.14, z);
+  r.userData.life = 1; r.userData.max = scale || 1;
+  r.scale.setScalar(0.6);
+  r.material.opacity = 0.75;
+  r.visible = true;
+}
+
+/* fish silhouette circling under the float during a fight */
+const ghostMat = new THREE.MeshBasicMaterial({color:0x0c2730, transparent:true, opacity:0.45, depthWrite:false});
+const ghostFish = new THREE.Group();
+const gBody = new THREE.Mesh(new THREE.SphereGeometry(0.46, 10, 8), ghostMat);
+gBody.scale.set(1, 0.6, 2.6); ghostFish.add(gBody);
+const gTail = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.85, 6), ghostMat);
+gTail.rotation.x = -Math.PI/2; gTail.position.z = -1.15; ghostFish.add(gTail);
+ghostFish.visible = false;
+scene.add(ghostFish);
+
+/* reeds along the bank */
+{
+  const reedGeo = new THREE.ConeGeometry(0.045, 1.15, 3);
+  const reedMat = new THREE.MeshLambertMaterial({color:0x4c7a3a});
+  const reeds = new THREE.InstancedMesh(reedGeo, reedMat, 240);
+  const dummy = new THREE.Object3D();
+  for(let i=0;i<240;i++){
+    dummy.position.set(-80 + Math.random()*160, 0.55, 5.15 + Math.random()*1.1);
+    dummy.rotation.set((Math.random()-0.5)*0.4, Math.random()*Math.PI, (Math.random()-0.5)*0.4);
+    dummy.scale.setScalar(0.65 + Math.random()*1.0);
+    dummy.updateMatrix();
+    reeds.setMatrixAt(i, dummy.matrix);
+  }
+  reeds.instanceMatrix.needsUpdate = true;
+  scene.add(reeds);
+}
+/* distant treeline to close the horizon */
+{
+  const farMat = new THREE.MeshLambertMaterial({color:0x2c5236});
+  for(let i=0;i<26;i++){
+    const h = 8 + Math.random()*8;
+    const t = new THREE.Mesh(new THREE.ConeGeometry(4 + Math.random()*3, h, 6), farMat);
+    t.position.set(-90 + i*7.2, h/2 - 1, -58 - Math.random()*16);
+    scene.add(t);
+  }
+}
+
+function setSkyMood(o){
+  const top = o.night ? '#050b1c' : o.dusk ? '#4a3a72' : o.storm ? '#2b333c' : o.rain ? '#48545f' : o.cloud ? '#6f8fa8' : '#3f8fd6';
+  const bot = o.night ? '#0d1730' : o.dusk ? '#f0904e' : o.storm ? '#5d666e' : o.rain ? '#7c8a94' : o.cloud ? '#b7c3cc' : '#bfe4f5';
+  if(skyDome.material.map) skyDome.material.map.dispose();
+  skyDome.material.map = makeSkyTex(top, bot);
+  skyDome.material.needsUpdate = true;
+
+  stars.material.opacity = o.night ? 0.95 : 0;
+  moonMesh.material.opacity = o.night ? 0.95 : 0;
+  sunMesh.material.opacity = o.night ? 0 : 0.95;
+  sunHalo.material.opacity = o.night ? 0 : (o.dusk ? 0.4 : 0.22);
+  sparks.material.opacity = o.night ? 0.1 : (o.cloud || o.rain || o.storm ? 0.14 : 0.42);
+
+  clouds.forEach(c=>{
+    c.g.children.forEach(m=>{
+      m.material.color.setHex(o.night ? 0x27324a : o.storm ? 0x6b7480 : o.rain ? 0x9aa6b0 : 0xffffff);
+      m.material.opacity = o.night ? 0.3 : o.storm ? 0.9 : 0.8;
+    });
+  });
+}
+
+function updateSkyBodies(){
+  const now = new Date();
+  const hr = now.getHours() + now.getMinutes()/60;
+  const ang = (hr - 6) / 12 * Math.PI;     // 6h → 0 · 12h → π/2 · 18h → π
+  const sx = Math.cos(ang)*128, sy = Math.sin(ang)*96;
+  sunMesh.position.set(sx, sy, -70);
+  sunHalo.position.copy(sunMesh.position);
+  moonMesh.position.set(-sx, -sy, -62);
+  /* directional light follows whichever body is up */
+  const isNight = sy < 0;
+  const lx = isNight ? -sx : sx, ly = isNight ? -sy : sy;
+  sun.position.set(lx*0.5, Math.max(8, ly*0.95), -20);
+}
+
+/* ---- water ---- */
+const waterGeo = new THREE.PlaneGeometry(300, 300, 56, 56);
+const waterMat = new THREE.MeshPhongMaterial({
+  color:0x2f7d6b, shininess:110, specular:0x557766, transparent:true, opacity:0.94, flatShading:false
+});
+const water = new THREE.Mesh(waterGeo, waterMat);
+water.rotation.x = -Math.PI/2;
+water.position.set(0,0,-30);
+scene.add(water);
+const waterPos = waterGeo.attributes.position;
+
+/* ---- bank / walkway ---- */
+const bankMat = new THREE.MeshPhongMaterial({color:0x9d9a90});
+const bank = new THREE.Mesh(new THREE.BoxGeometry(320, 2.4, 16), bankMat);
+bank.position.set(0,-0.9,12); scene.add(bank);
+const walkMat = new THREE.MeshPhongMaterial({color:0xb9b5a8});
+const walk = new THREE.Mesh(new THREE.PlaneGeometry(320, 14), walkMat);
+walk.rotation.x = -Math.PI/2; walk.position.set(0,0.42,12.5); scene.add(walk);
+/* kerb stripe */
+const kerb = new THREE.Mesh(new THREE.BoxGeometry(320,0.12,0.5), new THREE.MeshPhongMaterial({color:0xe8e2d0}));
+kerb.position.set(0,0.48,5.6); scene.add(kerb);
+
+/* ---- numbered pegs + chairs ---- */
+for(let i=1;i<=16;i++){
+  const x = -24 + i*3;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 96;
+  const cx2 = cv.getContext('2d');
+  cx2.fillStyle = '#173a5e'; cx2.fillRect(0,0,96,96);
+  cx2.strokeStyle = '#f5b942'; cx2.lineWidth = 5; cx2.strokeRect(4,4,88,88);
+  cx2.fillStyle = '#ffd54a'; cx2.font = 'bold 56px Arial';
+  cx2.textAlign = 'center'; cx2.textBaseline = 'middle';
+  cx2.fillText(i, 48, 52);
+  const tex = new THREE.CanvasTexture(cv);
+  const mark = new THREE.Mesh(new THREE.PlaneGeometry(1.3,1.3), new THREE.MeshBasicMaterial({map:tex}));
+  mark.rotation.x = -Math.PI/2; mark.position.set(x, 0.5, 6.4); scene.add(mark);
+
+  const chair = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.85,0.9), new THREE.MeshPhongMaterial({color:0x2f4668}));
+  chair.position.set(x, 0.85, 9.6); scene.add(chair);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.8,0.14), new THREE.MeshPhongMaterial({color:0x24374f}));
+  back.position.set(x, 1.35, 10.0); scene.add(back);
+}
+
+/* ---- trees / willows ---- */
+function makeWillow(x,z,scale=1){
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.34,3.2,6), new THREE.MeshPhongMaterial({color:0x6d4b2c}));
+  trunk.position.y = 1.6; g.add(trunk);
+  const foliageMat = new THREE.MeshPhongMaterial({color:0x3e8b46});
+  for(let i=0;i<3;i++){
+    const b = new THREE.Mesh(new THREE.SphereGeometry(1.7 - i*0.25, 7, 5), foliageMat);
+    b.position.set((i-1)*0.7, 3.6 + i*0.35, (i%2)*0.4); b.scale.y = 1.25; g.add(b);
+  }
+  g.position.set(x,0.4,z); g.scale.setScalar(scale); scene.add(g);
+}
+for(let i=-5;i<=5;i++){ makeWillow(i*8, -14, 1.1); makeWillow(i*8+4, 18, 0.85); }
+
+/* ---- umbrellas ---- */
+const umbColors = [0x8e44ad, 0xe67e22, 0x2980b9, 0x27ae60, 0xc0392b];
+for(let i=0;i<9;i++){
+  const x = -26 + i*6.5;
+  const uMat = new THREE.MeshPhongMaterial({color:umbColors[i%umbColors.length], side:THREE.DoubleSide});
+  const umb = new THREE.Mesh(new THREE.ConeGeometry(1.7, 0.85, 12, 1, true), uMat);
+  umb.position.set(x, 3.5, 12); scene.add(umb);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,3.6,5), new THREE.MeshPhongMaterial({color:0x333}));
+  pole.position.set(x, 1.9, 12); scene.add(pole);
+}
+
+/* ---- lotus pads + flowers ---- */
+const padMat = new THREE.MeshBasicMaterial({color:0x2f8b57, side:THREE.DoubleSide});
+const flowerMat = new THREE.MeshBasicMaterial({color:0xff8fb8});
+for(let i=0;i<44;i++){
+  const ang = Math.random()*Math.PI*2;
+  const rad = 8 + Math.random()*26;
+  const x = Math.cos(ang)*rad, z = -6 - Math.abs(Math.sin(ang))*rad*0.8;
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(0.4+Math.random()*0.3, 7), padMat);
+  pad.rotation.x = -Math.PI/2; pad.position.set(x, 0.07, z); scene.add(pad);
+  if(i%3===0){
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.2,6,5), flowerMat);
+    fl.position.set(x, 0.22, z); fl.scale.y = 0.55; scene.add(fl);
+  }
+}
+
+/* ---- red lanterns ---- */
+const lanternGlow = [];
+for(let i=0;i<11;i++){
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,2.8,5), new THREE.MeshPhongMaterial({color:0x8b1a1a}));
+  pole.position.y = 1.4; g.add(pole);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.26,7,7), new THREE.MeshBasicMaterial({color:0x992222}));
+  lamp.position.y = 2.9; g.add(lamp); lanternGlow.push(lamp);
+  g.position.set(-28 + i*5.6, 0.42, 15.5); scene.add(g);
+}
+
+/* ---- aerator (oxygen corner) ---- */
+const aerator = new THREE.Group(); aerator.position.set(5, 0, -10); scene.add(aerator);
+const bubbles = [];
+const bubGeo = new THREE.SphereGeometry(0.07, 5, 4);
+for(let i=0;i<14;i++){
+  const b = new THREE.Mesh(bubGeo, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.55}));
+  b.position.set((Math.random()-0.5)*3.2, -0.4, (Math.random()-0.5)*3.2);
+  b.userData.v = 0.25 + Math.random()*0.45;
+  aerator.add(b); bubbles.push(b);
+}
+
+/* ---- rival anglers (simplified) ---- */
+const rivals = [];
+for(let i=0;i<4;i++){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26,0.75,3,6), new THREE.MeshPhongMaterial({color:[0x8a3a3a,0x3a5a8a,0x6a6a3a,0x3a7a5a][i]}));
+  body.position.y = 1.05; g.add(body);
+  const rod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.045,5.5,5), new THREE.MeshPhongMaterial({color:0x9a7a3a}));
+  rod2.position.set(0.35,1.6,-2.2); rod2.rotation.x = Math.PI/2.6; g.add(rod2);
+  g.position.set(-19 + i*9.5, 0.42, 9.5);
+  scene.add(g); rivals.push(g);
+}
+
+/* ---- player ---- */
+const player = new THREE.Group();
+const pBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.3,0.95,4,7), new THREE.MeshPhongMaterial({color:0x1d2c40}));
+pBody.position.y = 0.95; player.add(pBody);
+const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.24,8,7), new THREE.MeshPhongMaterial({color:0xd8b48c}));
+pHead.position.y = 1.68; player.add(pHead);
+const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.05,8,6), new THREE.MeshPhongMaterial({color:0xd4a017}));
+rod.position.set(0.1,1.75,-3.1); rod.rotation.x = Math.PI/2.35;
+player.add(rod);
+const rodTip = new THREE.Object3D(); rodTip.position.set(0.1, 3.3, -7.2); player.add(rodTip);
+/* tackle box */
+const tackle = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.5), new THREE.MeshPhongMaterial({color:0x2d6bb5}));
+tackle.position.set(-0.9, 0.65, 0.3); player.add(tackle);
+/* chair */
+const seat = new THREE.Mesh(new THREE.BoxGeometry(0.85,0.14,0.85), new THREE.MeshPhongMaterial({color:0x1c1c24}));
+seat.position.set(0,0.75,0.35); player.add(seat);
+const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.85,0.75,0.14), new THREE.MeshPhongMaterial({color:0x1c1c24}));
+seatBack.position.set(0,1.15,0.78); player.add(seatBack);
+const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.88,0.05,0.05), new THREE.MeshPhongMaterial({color:0xd4af37}));
+goldTrim.position.set(0,1.55,0.78); player.add(goldTrim);
+player.position.set(-2, 0.42, 8.6);
+scene.add(player);
+
+/* ---- fishing line + float ---- */
+const lineMat = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.55});
+const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+const fishLine = new THREE.Line(lineGeo, lineMat);
+fishLine.frustumCulled = false;
+scene.add(fishLine);
+
+const floatG = new THREE.Group();
+const fStem = new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.016,0.9,5), new THREE.MeshBasicMaterial({color:0xee4444}));
+fStem.position.y = 0.45; floatG.add(fStem);
+const fBand1 = new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.12,6), new THREE.MeshBasicMaterial({color:0xffdd33}));
+fBand1.position.y = 0.62; floatG.add(fBand1);
+const fTipMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.019,0.019,0.22,5), new THREE.MeshBasicMaterial({color:0x66ffcc}));
+fTipMesh.position.y = 0.95; floatG.add(fTipMesh);
+const fBelly = new THREE.Mesh(new THREE.SphereGeometry(0.085,7,6), new THREE.MeshBasicMaterial({color:0xdd3333}));
+fBelly.position.y = 0.05; floatG.add(fBelly);
+floatG.position.set(1.5, 0, -8);
+scene.add(floatG);
+
+const floatLight = new THREE.PointLight(0x66ffcc, 0, 7);
+scene.add(floatLight);
+
+/* searchlight for night */
+const headLamp = new THREE.SpotLight(0xfff0c8, 0, 45, 0.55, 0.45, 1);
+headLamp.position.set(-2, 5.5, 9);
+scene.add(headLamp);
+headLamp.target = floatG;
+
+/* ---- chum particles ---- */
+const chumParts = [];
+const chumGeo = new THREE.SphereGeometry(0.055, 5, 4);
+for(let i=0;i<36;i++){
+  const p = new THREE.Mesh(chumGeo, new THREE.MeshBasicMaterial({color:0xf2dca0, transparent:true, opacity:0}));
+  scene.add(p); chumParts.push(p);
+}
+
+/* ---- rain ---- */
+const RAIN_N = 700;
+const rainGeo = new THREE.BufferGeometry();
+const rainPos = new Float32Array(RAIN_N*3);
+for(let i=0;i<RAIN_N;i++){
+  rainPos[i*3]   = (Math.random()-0.5)*70;
+  rainPos[i*3+1] = Math.random()*22;
+  rainPos[i*3+2] = -40 + Math.random()*45;
+}
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos,3));
+const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({color:0xaad4ff, size:0.13, transparent:true, opacity:0}));
+rain.frustumCulled = false;
+scene.add(rain);
+
+/* =========================================================
+   4. FLOAT ZOOM PANEL
+   ========================================================= */
+const fcan = document.getElementById('fcan');
+const fx = fcan.getContext('2d');
+let floatDriftX = 0;
+
+function drawFloat(){
+  const W = fcan.width, H = fcan.height;
+  fx.clearRect(0,0,W,H);
+  const cx = W/2;
+  const waterY = H*0.46 + S.floatOff*26;
+
+  /* water */
+  const grad = fx.createLinearGradient(0,waterY,0,H);
+  grad.addColorStop(0,'rgba(70,170,160,.45)');
+  grad.addColorStop(1,'rgba(8,40,50,.9)');
+  fx.fillStyle = grad; fx.fillRect(0, waterY, W, H-waterY);
+
+  /* surface line with ripple */
+  fx.strokeStyle = 'rgba(190,240,255,.85)'; fx.lineWidth = 2;
+  fx.beginPath();
+  for(let x=0;x<=W;x+=4){
+    const y = waterY + Math.sin(x*0.16 + performance.now()*0.003)*1.8;
+    x===0 ? fx.moveTo(x,y) : fx.lineTo(x,y);
+  }
+  fx.stroke();
+
+  /* steps 1..4 above water */
+  fx.font = 'bold 15px Arial'; fx.textAlign = 'left'; fx.textBaseline = 'middle';
+  for(let i=1;i<=4;i++){
+    const y = waterY - i*28;
+    fx.strokeStyle = 'rgba(255,255,255,.16)'; fx.lineWidth = 1;
+    fx.beginPath(); fx.moveTo(14,y); fx.lineTo(W-8,y); fx.stroke();
+    fx.fillStyle = i<=2 ? 'rgba(255,255,255,.9)' : 'rgba(255,210,120,.9)';
+    fx.fillText(i, 2, y);
+  }
+
+  /* float body (tăm) — red/yellow/green striped */
+  const stemTop = waterY - 34;
+  let y = stemTop;
+  const segs = [[ '#e33', 30 ],[ '#fd3', 26 ],[ '#e33', 26 ],[ '#7c4', 24 ],[ '#c96', 34 ]];
+  for(const [col, len] of segs){
+    fx.fillStyle = col; fx.fillRect(cx-4, y, 8, len);
+    fx.strokeStyle = 'rgba(0,0,0,.35)'; fx.lineWidth = 1; fx.strokeRect(cx-4, y, 8, len);
+    y += len;
+  }
+  /* antenna below water */
+  fx.fillStyle = '#c33'; fx.fillRect(cx-1.5, y, 3, Math.max(10, H-y-4));
+
+  /* glow if LED */
+  if(S.floatLvl >= 2){
+    fx.shadowColor = '#6fe'; fx.shadowBlur = 14;
+    fx.fillStyle = '#6fe'; fx.beginPath(); fx.arc(cx, stemTop, 5, 0, 7); fx.fill();
+    fx.shadowBlur = 0;
+  }
+  /* hook line indicator */
+  fx.strokeStyle = 'rgba(255,255,255,.18)'; fx.lineWidth = 1;
+  fx.beginPath(); fx.moveTo(cx, waterY); fx.lineTo(cx, H); fx.stroke();
+
+  /* drift arrow when wind */
+  if(S.windPush){
+    fx.fillStyle = 'rgba(255,200,120,.9)'; fx.font = 'bold 13px Arial'; fx.textAlign='center';
+    fx.fillText('→', cx + Math.sin(performance.now()*0.004)*8, waterY + 40);
+  }
+}
+
+/* drag float box */
+const floatBox = document.getElementById('floatBox');
+let boxDrag = null;
+floatBox.addEventListener('pointerdown', e=>{
+  if(e.target.classList.contains('label') || e.target === fcan) return;
+  boxDrag = {px:e.clientX, py:e.clientY, l:floatBox.offsetLeft, t:floatBox.offsetTop};
+  floatBox.setPointerCapture(e.pointerId);
+});
+floatBox.addEventListener('pointermove', e=>{
+  if(!boxDrag) return;
+  const nx = Math.max(2, Math.min(window.innerWidth-floatBox.offsetWidth-2, boxDrag.l + e.clientX-boxDrag.px));
+  const ny = Math.max(60, Math.min(window.innerHeight-160, boxDrag.t + e.clientY-boxDrag.py));
+  floatBox.style.left = nx+'px'; floatBox.style.top = ny+'px'; floatBox.style.right = 'auto';
+});
+floatBox.addEventListener('pointerup', ()=> boxDrag = null);
+floatBox.addEventListener('pointercancel', ()=> boxDrag = null);
+
+/* =========================================================
+   5. WEATHER (Open-Meteo + realtime clock)
+   ========================================================= */
+const WX_LABEL = {sun:'☀️ Nắng', cloud:'⛅ Mây', rain:'🌧️ Mưa rào', storm:'⛈️ Giông', night:'🌙 Đêm', wind:'💨 Gió lớn'};
+let wx = {icon:'sun', temp:28, hum:72, wind:7, src:'Mặc định VN'};
+
+async function fetchLiveWeather(){
+  try{
+    let lat = 21.0285, lon = 105.8542;
+    if(navigator.geolocation){
+      try{
+        const pos = await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:4000,maximumAge:600000}));
+        lat = pos.coords.latitude; lon = pos.coords.longitude;
+      }catch(_){}
+    }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('http');
+    const j = await r.json();
+    const c = j.current || {};
+    const code = c.weather_code ?? 0;
+    let icon = 'sun';
+    if(code === 0) icon = 'sun';
+    else if(code <= 3) icon = 'cloud';
+    else if(code >= 95) icon = 'storm';
+    else if(code >= 51) icon = 'rain';
+    wx = {
+      icon,
+      temp: Math.round(c.temperature_2m ?? 28),
+      hum: Math.round(c.relative_humidity_2m ?? 72),
+      wind: Math.round(c.wind_speed_10m ?? 7),
+      src: 'Live · Open-Meteo'
+    };
+  }catch(e){
+    wx.src = 'Offline · dùng mặc định';
+  }
+  applyWeather();
+}
+
+function resolveWeather(){
+  const hr = new Date().getHours();
+  if(S.wxMode === 'test'){
+    const t = S.wxTest;
+    if(t === 'night') return {icon:'night', temp:wx.temp, hum:wx.hum, wind:6, test:true};
+    if(t === 'wind')  return {icon:'cloud', temp:wx.temp, hum:wx.hum, wind:22, test:true};
+    return {icon:t, temp:wx.temp, hum:wx.hum, wind:t==='storm'?18:wx.wind, test:true};
+  }
+  const icon = (hr < 6 || hr >= 19) ? 'night' : wx.icon;
+  return {icon, temp:wx.temp, hum:wx.hum, wind:wx.wind, test:false};
+}
+
+function applyWeather(){
+  const w = resolveWeather();
+  const hr = new Date().getHours();
+  const night = w.icon === 'night';
+  const rainOn = w.icon === 'rain' || w.icon === 'storm';
+  const stormOn = w.icon === 'storm';
+  const dusk = !night && ((hr >= 17 && hr < 19) || (hr >= 5 && hr < 6));
+  const noonSun = !night && w.icon === 'sun' && hr >= 11 && hr <= 14;
+
+  let sky = 0x8ec6e8, sunI = 1.25, ambI = 0.55, waterCol = 0x2f7d6b, fogNear = 55, fogFar = 200;
+  if(night){ sky = 0x0b1428; sunI = 0.14; ambI = 0.2; waterCol = 0x11343a; fogNear = 30; fogFar = 120; }
+  else if(dusk){ sky = 0xe98b5c; sunI = 0.62; ambI = 0.42; waterCol = 0x35706b; }
+  else if(stormOn){ sky = 0x4c5a66; sunI = 0.35; ambI = 0.32; waterCol = 0x2a5a5c; fogNear = 25; fogFar = 110; }
+  else if(rainOn){ sky = 0x63737f; sunI = 0.5; ambI = 0.4; waterCol = 0x2c6b68; fogNear = 35; fogFar = 140; }
+  else if(w.icon === 'cloud'){ sky = 0x9aa8b4; sunI = 0.78; }
+
+  scene.background.setHex(sky);
+  scene.fog.color.setHex(sky);
+  scene.fog.near = fogNear; scene.fog.far = fogFar;
+  sun.intensity = sunI; ambient.intensity = ambI;
+  waterMat.color.setHex(waterCol);
+
+  /* lanterns + night gear */
+  lanternGlow.forEach(l => {
+    l.material.color.setHex(night ? 0xff5533 : 0x992222);
+    l.scale.setScalar(night ? 1.35 : 1);
+  });
+  S.night = night;
+  setSkyMood({night, dusk, storm:stormOn, rain:rainOn, cloud:w.icon === 'cloud'});
+  updateSkyBodies();
+  headLamp.intensity = night ? 3.2 : 0;
+  headLamp.position.set(player.position.x, 5.6, player.position.z + 0.6);
+  fTipMesh.material.color.setHex(night ? 0x7dffe0 : 0xffdd33);
+  floatLight.intensity = night ? 2.4 : 0;
+  rain.material.opacity = rainOn ? 0.75 : 0;
+  rain.material.size = stormOn ? 0.18 : 0.13;
+
+  /* effects */
+  let eff = 1;
+  if(rainOn) eff *= 1.3;
+  if(night) eff *= 1.15;
+  if(noonSun) eff *= 0.55;
+  if(w.icon === 'cloud') eff *= 0.92;
+  eff *= SPOTS[S.spot] ? SPOTS[S.spot].bite : 1;
+  if(S.chumT > 0) eff *= 1.6;
+  S.effBite = eff;
+  S.windPush = w.wind > 15 ? 1 : 0;
+
+  /* HUD */
+  const now = new Date();
+  const clock = now.toLocaleTimeString('vi-VN', {hour12:false});
+  const dateStr = now.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const hum = document.getElementById('hudWx');
+  hum.innerHTML =
+    `<b>${DAYS[now.getDay()]}, ${dateStr} · ${clock}</b>` +
+    `${WX_LABEL[w.icon]||w.icon} · ${w.temp}°C<br>` +
+    `Ẩm ${w.hum}% · Gió ${w.wind} km/h` +
+    `<div class="sub">${w.test ? '🧪 Tự chọn (Test)' : (S.wxMode === 'live' ? wx.src : 'Live')} · Chạm để đổi</div>`;
+
+  /* advice line */
+  let advice = '';
+  if(rainOn) advice = '🌧 Mưa tăng oxy — cá ăn mạnh +30%!';
+  else if(noonSun) advice = '☀️ Nắng gắt trưa — cá nổi lửng, nên chuyển câu lửng.';
+  else if(w.wind > 15) advice = '💨 Gió lớn — sóng trôi phao, cần phao bầu hoặc tăng chì.';
+  else if(night) advice = '🌙 Ban đêm — đèn pha + đèn lồng sáng, phao LED phát quang.';
+  else if(w.icon === 'storm') advice = '⛈ Giông — cá nhát mồi, phao chỉ nhấp nhẹ.';
+  else advice = '🌤 Thời tiết thuận — cá ăn đều.';
+  document.getElementById('rigLine').textContent =
+    `Đang câu ${RIGS[S.rig].n} · ${RIGS[S.rig].desc}`;
+  if(advice && !S.hooked) setChat(advice);
+}
+
+document.getElementById('hudWx').addEventListener('click', openWeatherModal);
+
+function openWeatherModal(){
+  openSheet('weather');
+}
+
+/* =========================================================
+   6. UI SHEET SYSTEM
+   ========================================================= */
+const modalEl = document.getElementById('modal');
+const sheet = document.getElementById('sheet');
+let sheetMode = '';
+
+function openSheet(mode){
+  sheetMode = mode;
+  modalEl.classList.add('on');
+  ac(); startAmbience();
+  renderSheet();
+}
+function closeSheet(){ modalEl.classList.remove('on'); sheetMode=''; }
+modalEl.addEventListener('click', e=>{ if(e.target === modalEl) closeSheet(); });
+
+const money = n => n >= 1000000 ? (n/1000000).toFixed(n%1000000?2:0).replace(/\.?0+$/,'')+'M'
+              : n >= 1000 ? Math.round(n/1000)+'k' : ''+n;
+
+function renderSheet(){
+  const m = sheetMode;
+  if(m === 'map')       sheet.innerHTML = vMap();
+  else if(m === 'rig')  sheet.innerHTML = vRig();
+  else if(m === 'bait') sheet.innerHTML = vBait();
+  else if(m === 'basket') sheet.innerHTML = vBasket();
+  else if(m === 'shop') sheet.innerHTML = vShop();
+  else if(m === 'quest') sheet.innerHTML = vQuest();
+  else if(m === 'anglers') sheet.innerHTML = vAnglers();
+  else if(m === 'nb')   sheet.innerHTML = vNeighbor();
+  else if(m === 'weather') sheet.innerHTML = vWeather();
+  else if(m === 'cam')  { closeSheet(); cycleCam(); return; }
+  else if(m === 'chum') { closeSheet(); doChum(); return; }
+  else if(m === 'end')  sheet.innerHTML = vEnd();
+  bindSheet();
+}
+
+function head(title, sub){
+  return `<h3>${title}<button class="x" data-close="1">✕</button></h3>${sub?`<p class="note">${sub}</p>`:''}`;
+}
+
+/* ---- MAP ---- */
+function vMap(){
+  let s = head('🗺️ Sơ đồ hồ — chọn ô câu', 'Mỗi địa hình ảnh hưởng loài cá & độ sâu. Chạm để chuyển ô.');
+  s += `<div class="grid2">`;
+  SPOTS.forEach((sp,i)=>{
+    s += `<button class="spot ${S.spot===i?'sel':''}" data-spot="${i}">
+      <b>${sp.n}</b><br>${sp.d} m · ${sp.target}<br>
+      <span style="color:${sp.bite>=1.2?'#6f6':'#cc9'}">Thế ăn ${sp.bite>=1.2?'tốt':sp.bite>=1?'khá':'nhát'}</span>
+    </button>`;
+  });
+  s += `</div>`;
+  s += `<h4>Ô câu trống trong ca</h4><div class="grid2">`;
+  for(let i=1;i<=16;i++){
+    const occ = (i===14||i===15||i===16||i===13);
+    s += `<button class="spot ${occ?'':''}" style="opacity:${occ?0.45:1}" data-spotnum="${i}">
+      Ô ${i} · ${occ?'có người':'trống'} ${occ?'🔴':'🟢'}</button>`;
+  }
+  s += `</div><p class="note">Ô đang câu: Ô ${S.spot+1}. Đổi ô sẽ kéo cần lại vị trí mới.</p>`;
+  return s;
+}
+
+/* ---- RIG ---- */
+function vRig(){
+  let s = head('⚖️ Cân phao — chọn kiểu câu', 'Chỉnh trọng lượng chì & độ sâu lưỡi câu. Đúng kiểu sẽ ăn cá tốt hơn.');
+  s += `<div class="pillwrap">`;
+  RIGS.forEach((r,i)=> s += `<button class="pill ${S.rig===i?'on':''}" data-rig="${i}">${r.n}</button>`);
+  s += `</div>`;
+  s += `<div class="row"><span>Mô tả dòng<small>${RIGS[S.rig].desc}</small></span></div>`;
+  s += `<div class="row"><span>Độ nhạy tín hiệu<small>Phao báo rõ hay chỉ nhấp nhẹ</small></span><span class="r">${(RIGS[S.rig].sens*100|0)}%</span></div>`;
+  s += `<div class="row"><span>Phao đang dùng<small>${FLOATS[S.floatLvl].n}</small></span><span class="r">${['Nhạy','Chống sóng','LED đêm'][S.floatLvl]}</span></div>`;
+  s += `<p class="note">Gió lớn (&gt;15 km/h): nên chọn <b>Câu đáy 2 kim</b> + phao bầu chống sóng để phao không trôi.</p>`;
+  return s;
+}
+
+/* ---- BAIT ---- */
+function vBait(){
+  let s = head('🥣 Trộn mồi & Tinh mùi', 'Kết hợp mồi chính + phụ gia để tăng tỷ lệ cá VIP.');
+  s += `<h4>Mồi chính</h4><div class="pillwrap">`;
+  BAITS.forEach((b,i)=> s += `<button class="pill ${S.baitType===i?'on':''}" data-bait="${i}">${b.n}<br><span style="font-size:9.5px">${b.f}</span></button>`);
+  s += `</div><h4>Tinh mùi phụ gia</h4><div class="pillwrap">`;
+  FLAVORS.forEach((f,i)=> s += `<button class="pill ${S.flavor===i?'on':''}" data-flav="${i}">${f.n} · ${money(f.p)}</button>`);
+  s += `</div>`;
+  s += `<div class="row"><span>Chậu mồi còn lại<small>Mỗi lần ném tốn 1 lưỡi mồi</small></span><span class="r">${S.baits} lần</span></div>`;
+  s += `<div class="row"><span>Trộn thêm<small>+25 lần vê mồi · 20k</small></span><button class="buy" data-act="mix">Trộn mồi</button></div>`;
+  s += `<div class="row"><span>Mua tinh mùi đang chọn<small>${S.flavor>=0?FLAVORS[S.flavor].n:'Chưa chọn'} · dùng cho 1 ca</small></span><button class="buy" data-act="buymix">${S.flavor>=0?money(FLAVORS[S.flavor].p):'—'}</button></div>`;
+  s += `<p class="note">Mồi ${BAITS[S.baitType].n} nhắm ${BAITS[S.baitType].f}. Phụ gia tăng ~25% tỉ lệ cá VIP (to hơn).</p>`;
+  return s;
+}
+
+/* ---- BASKET ---- */
+function vBasket(){
+  const total = S.basket.reduce((a,f)=>a+f.w,0);
+  /* giá trị từng con theo loài */
+  const vOf = f => {
+    const base = FISH.find(x=>x.n===f.n || f.n.startsWith(x.n));
+    return base ? Math.round(f.w * base.v / 1000) : Math.round(f.w * 300 / 1000);
+  };
+  const cash = Math.round(S.basket.reduce((a,f)=>a+vOf(f),0));
+  S.basketValue = cash; /* cache cho nút bán */
+  let s = head('🐟 Giỏ cá của bạn', `Tổng ${S.basket.length} con · ${(total/1000).toFixed(2)} kg`);
+  if(!S.basket.length){
+    s += `<div class="row"><span>Giỏ đang trống<small>Ra hồ câu để đổ cá vào giỏ</small></span></div>`;
+  }else{
+    const sorted = [...S.basket].sort((a,b)=>b.w-a.w);
+    s += `<h4>Cá trong giỏ</h4>`;
+    sorted.slice(0,10).forEach(f=>{
+      const base = FISH.find(x=>x.n===f.n || f.n.startsWith(x.n));
+      const dot = base ? `<span style="color:${base.col}">●</span> ` : '';
+      s += `<div class="row"><span>${dot}${f.n}<small>${f.spot}</small></span><span class="r">${f.w} g</span></div>`;
+    });
+    if(sorted.length > 10) s += `<p class="note">... và ${sorted.length-10} con khác</p>`;
+  }
+  s += `<h4>Kỷ lục cá nhân</h4>`;
+  Object.entries(S.records).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([n,w])=>{
+    s += `<div class="row"><span>${n}</span><span class="r">${w} g</span></div>`;
+  });
+  if(!Object.keys(S.records).length) s += `<p class="note">Chưa có kỷ lục nào.</p>`;
+  s += `<div class="row" style="margin-top:10px"><span>Bán cá cho chủ hồ<small>Giá theo loài · rô phi thường rẻ, chép viền / lăng vàng / trôi dế đắt</small></span>
+        <button class="buy sell" data-act="sell">Bán · ${money(cash)}</button></div>`;
+  return s;
+}
+
+/* ---- SHOP ---- */
+function vShop(){
+  let s = head('🛒 Cửa hàng nâng cấp', `Tiền mặt: <b style="color:#ffd54a">${money(S.money)}</b>`);
+  s += `<h4>🎣 Cần đài</h4>`;
+  RODS.forEach((r,i)=>{
+    const owned = S.rodLvl >= i, cur = S.rodLvl === i;
+    s += `<div class="row"><span>${r.n}<small>Vươn xa ${r.len} m · chịu cá lớn</small></span>
+      ${cur?'<span class="r">Đang dùng</span>' :
+        owned?'<span class="r" style="color:#6f6">✔ Đã mua</span>' :
+        `<button class="buy ${S.money<r.p?'no':''}" data-buy="rod" data-i="${i}">${money(r.p)}</button>`}</div>`;
+  });
+  s += `<h4>🧵 Trục & Thẻo</h4>`;
+  REELS.forEach((r,i)=>{
+    const owned = S.reelLvl >= i, cur = S.reelLvl === i;
+    s += `<div class="row"><span>${r.n}<small>Chịu tải ×${r.load.toFixed(1)} — đỡ đứt dây</small></span>
+      ${cur?'<span class="r">Đang dùng</span>' :
+        owned?'<span class="r" style="color:#6f6">✔ Đã mua</span>' :
+        `<button class="buy ${S.money<r.p?'no':''}" data-buy="reel" data-i="${i}">${money(r.p)}</button>`}</div>`;
+  });
+  s += `<h4>🔴 Phao đài</h4>`;
+  FLOATS.forEach((f,i)=>{
+    const owned = S.floatLvl >= i, cur = S.floatLvl === i;
+    const d = i===0?'Nhạy, báo rõ từng nấc':i===1?'Chống sóng gió lớn, ít trôi':'Phát sáng xanh — câu đêm';
+    s += `<div class="row"><span>${f.n}<small>${d}</small></span>
+      ${cur?'<span class="r">Đang dùng</span>' :
+        owned?'<span class="r" style="color:#6f6">✔ Đã mua</span>' :
+        `<button class="buy ${S.money<f.p?'no':''}" data-buy="float" data-i="${i}">${money(f.p)}</button>`}</div>`;
+  });
+  s += `<h4>🪱 Mồi & Tinh mùi</h4>`;
+  s += `<div class="row"><span>Bịch mồi tổng hợp<small>+30 lần vê mồi</small></span><button class="buy" data-act="buybait">35k</button></div>`;
+  FLAVORS.forEach((f,i)=>{
+    s += `<div class="row"><span>Tinh mùi ${f.n}<small>Tăng cá VIP</small></span><button class="buy" data-act="buyflav" data-i="${i}">${money(f.p)}</button></div>`;
+  });
+  return s;
+}
+
+/* ---- QUESTS ---- */
+function vQuest(){
+  const qs = questList();
+  let s = head('📋 Nhiệm vụ ca câu', 'Hoàn thành để nhận tiền mặt. Mỗi nhiệm vụ nhận 1 lần/ca.');
+  qs.forEach((q,i)=>{
+    const claimed = S.questsClaimed[i];
+    s += `<div class="row"><span>${q.done?'✅':'⬜'} ${q.n}<small>${q.desc}</small></span>
+      ${claimed ? '<span class="r" style="color:#777">Đã nhận</span>' :
+        q.done ? `<button class="buy" data-quest="${i}">Nhận +${money(q.r)}</button>` :
+        `<span class="r" style="color:#777">+${money(q.r)}</span>`}</div>`;
+  });
+  const best = S.basket.reduce((a,f)=> f.w>a.w?f:a, {n:'—', w:0, spot:''});
+  const total = S.basket.reduce((a,f)=>a+f.w,0);
+  s += `<h4>🏆 Bảng xếp hạng ca câu (4 tiếng)</h4>`;
+  s += `<div class="row"><span>Cá to nhất của bạn<small>${best.n} ${best.spot||''}</small></span><span class="r">${best.w} g</span></div>`;
+  s += `<div class="row"><span>Tổng trọng lượng<small>${S.basket.length} con trong giỏ</small></span><span class="r">${(total/1000).toFixed(2)} kg</span></div>`;
+  s += `<div class="row"><span>Gia hạn ca câu +2 giờ<small>Còn lại: ${fmtTime(S.sessionLeft)}</small></span><button class="buy sell" data-act="extend">200k</button></div>`;
+  return s;
+}
+
+function questList(){
+  const total = S.basket.reduce((a,f)=>a+f.w,0);
+  const biggest = S.basket.reduce((a,f)=>Math.max(a,f.w),0);
+  return [
+    {n:'Câu được 5 con cá', desc:'Đang có '+S.basket.length+'/5 con', done:S.basket.length>=5, r:120000},
+    {n:'Bắt cá trên 2 kg', desc:'Kỷ lục: '+(biggest||0)+' g', done:biggest>=2000, r:300000},
+    {n:'Tổng giỏ trên 6 kg', desc:(total/1000).toFixed(2)+' / 6.00 kg', done:total>=6000, r:250000},
+    {n:'Trộn mồi 1 lần trong ca', desc:S.chumMixed?'Đã trộn ✓':'Chưa trộn', done:S.chumMixed, r:50000}
+  ];
+}
+
+/* ---- ANGLERS ---- */
+function vAnglers(){
+  let s = head('👥 Danh sách cần thủ', 'Hồ dịch vụ Triệu Tâm · Ca hiện tại');
+  const list = [
+    {n:'Bạn (Triệu Tâm)', spot:'Ô '+(S.spot+1), kg:(S.basket.reduce((a,f)=>a+f.w,0)/1000)},
+    {n:'Anh Vũ', spot:'Ô 15', kg: 4.2 + Math.random()*3},
+    {n:'Chị Hồng', spot:'Ô 14', kg: 2.8 + Math.random()*2},
+    {n:'Anh Tuấn', spot:'Ô 16', kg: 5.1 + Math.random()*4},
+    {n:'Bác Tư', spot:'Ô 13', kg: 1.9 + Math.random()*2}
+  ].sort((a,b)=>b.kg-a.kg);
+  list.forEach((a,i)=>{
+    const medal = ['🥇','🥈','🥉','4','5'][i];
+    s += `<div class="row"><span>${medal} ${a.n}<small>${a.spot}</small></span><span class="r">${a.kg.toFixed(2)} kg</span></div>`;
+  });
+  s += `<p class="note">Tổng kết cuối ca so tài "Cá To Nhất" và "Tổng Trọng Lượng".</p>`;
+  return s;
+}
+
+/* ---- NEIGHBOR ---- */
+function vNeighbor(){
+  const nb = NEIGHBORS[Math.floor(Math.random()*NEIGHBORS.length)];
+  const theirBait = BAITS[Math.floor(Math.random()*BAITS.length)];
+  let s = head('👀 Hàng xóm bên cạnh', 'Liếc sang xem đồ câu & mồi của cần thủ AI.');
+  s += `<div class="row"><span>${nb}<small>${Math.random()<0.5?'Đang dính cá! 🎣':'Ngồi chờ phao'}</small></span><span class="r">${['Phao LED','Phao bầu','Phao tăm'][Math.floor(Math.random()*3)]}</span></div>`;
+  s += `<div class="row"><span>Mồi đang dùng<small>Gói mồi thơm dễ thấy</small></span><span class="r">${theirBait.n}</span></div>`;
+  s += `<div class="row"><span>Cần đài<small>Độ vươn</small></span><span class="r">${['3H','5H','8H'][Math.floor(Math.random()*3)]}</span></div>`;
+  s += `<p class="note">Nếu hàng xóm xả ổ mạnh, cá dồn về rìa ổ — <b>Kẹp xả</b> lấn ổ để "cướp cá".</p>`;
+  s += `<button class="buy" data-act="steal">🎯 Kẹp xả lấn ổ hàng xóm</button>`;
+  return s;
+}
+
+/* ---- WEATHER ---- */
+function vWeather(){
+  const live = S.wxMode === 'live';
+  let s = head('🌡️ Thời tiết & Thời gian', 'Đồng bộ giờ thực từ thiết bị mỗi giây.');
+  s += `<div class="pillwrap">
+    <button class="pill ${live?'on':''}" data-wxmode="live">🌐 Thực tế (Live)</button>
+    <button class="pill ${!live?'on':''}" data-wxmode="test">🧪 Tự chọn (Test)</button>
+  </div>`;
+  if(!live){
+    s += `<h4>Tự chọn thời tiết</h4><div class="pillwrap">`;
+    [['sun','☀️ Nắng'],['cloud','⛅ Mây'],['rain','🌧️ Mưa rào'],['wind','💨 Gió lớn'],['night','🌙 Câu đêm']].forEach(([k,l])=>{
+      s += `<button class="pill ${S.wxTest===k?'on':''}" data-wxtest="${k}">${l}</button>`;
+    });
+    s += `</div>`;
+  }
+  const w = resolveWeather();
+  s += `<div class="row"><span>Hiện tại<small>${WX_LABEL[w.icon]}</small></span><span class="r">${w.temp}°C · ${w.hum}%</span></div>`;
+  s += `<div class="row"><span>Gió<small>Tác động trôi phao</small></span><span class="r">${w.wind} km/h</span></div>`;
+  s += `<div class="row"><span>Tỷ lệ cắn câu<small>Đã tính địa hình + thời tiết</small></span><span class="r">${(S.effBite*100|0)}%</span></div>`;
+  s += `<p class="note">Mưa: +30% cá ăn · Nắng gắt trưa: cá lửng, giảm 45% · Đêm: +15% và bật đèn pha.</p>`;
+  return s;
+}
+
+/* ---- END OF SESSION ---- */
+function vEnd(){
+  const total = S.basket.reduce((a,f)=>a+f.w,0);
+  const best = S.basket.reduce((a,f)=> f.w>a.w?f:a, {n:'—', w:0});
+  let s = head('🏁 Hết ca câu — Tổng kết', 'Bảng xếp hạng cuối ca');
+  s += `<div class="row"><span>Tổng trọng lượng</span><span class="r">${(total/1000).toFixed(2)} kg</span></div>`;
+  s += `<div class="row"><span>Cá to nhất<small>${best.n}</small></span><span class="r">${best.w} g</span></div>`;
+  s += `<div class="row"><span>Tiền mặt</span><span class="r">${money(S.money)}</span></div>`;
+  s += `<div class="row"><span>Gia hạn thêm 2 giờ</span><button class="buy sell" data-act="extend2">200k</button></div>`;
+  return s;
+}
+
+/* =========================================================
+   7. SHEET EVENT BINDING
+   ========================================================= */
+function bindSheet(){
+  sheet.querySelectorAll('[data-close]').forEach(b=> b.onclick = closeSheet);
+
+  /* spots */
+  sheet.querySelectorAll('[data-spot]').forEach(b=> b.onclick = ()=>{
+    const i = +b.dataset.spot;
+    S.spot = i;
+    const sp = SPOTS[i];
+    player.position.x = sp.x;
+    floatG.position.set(sp.x + 2.5, 0, -8);
+    setChat(`Đã chuyển tới ${sp.n} (${sp.d} m) — cá mục tiêu: ${sp.target}`);
+    toast(`📍 ${sp.n} · ${sp.d} m`);
+    castOut(true);
+    applyWeather();
+    renderSheet();
+  });
+  sheet.querySelectorAll('[data-spotnum]').forEach(b=> b.onclick = ()=>{
+    const n = +b.dataset.spotnum;
+    if([13,14,15,16].includes(n)){ toast(`Ô ${n} đã có người ngồi`); return; }
+    S.spot = (n-1) % 4;
+    player.position.x = SPOTS[S.spot].x + ((n%4)-1.5)*0.6;
+    floatG.position.set(player.position.x + 2.5, 0, -8);
+    setChat(`Bạn ngồi Ô ${n} — ${SPOTS[S.spot].n}`);
+    toast(`Ô ${n} · ${SPOTS[S.spot].n}`);
+    castOut(true); renderSheet();
+  });
+
+  /* rig */
+  sheet.querySelectorAll('[data-rig]').forEach(b=> b.onclick = ()=>{
+    S.rig = +b.dataset.rig;
+    tone(520,0.08,'sine',0.1);
+    renderSheet(); applyWeather();
+  });
+
+  /* bait */
+  sheet.querySelectorAll('[data-bait]').forEach(b=> b.onclick = ()=>{ S.baitType = +b.dataset.bait; renderSheet(); });
+  sheet.querySelectorAll('[data-flav]').forEach(b=> b.onclick = ()=>{ S.flavor = +b.dataset.flav; renderSheet(); });
+
+  /* shop buy */
+  sheet.querySelectorAll('[data-buy]').forEach(b=> b.onclick = ()=>{
+    const kind = b.dataset.buy, i = +b.dataset.i;
+    const arr = kind==='rod'?RODS:kind==='reel'?REELS:FLOATS;
+    const price = arr[i].p;
+    if(S.money < price){ toast('Không đủ tiền!'); sfxFail(); return; }
+    S.money -= price;
+    if(kind==='rod') S.rodLvl = Math.max(S.rodLvl,i);
+    if(kind==='reel') S.reelLvl = Math.max(S.reelLvl,i);
+    if(kind==='float') S.floatLvl = Math.max(S.floatLvl,i);
+    sfxBell(); toast('✅ Đã mua '+arr[i].n); syncHUD(); renderSheet();
+  });
+
+  /* quests */
+  sheet.querySelectorAll('[data-quest]').forEach(b=> b.onclick = ()=>{
+    const i = +b.dataset.quest;
+    const q = questList()[i];
+    if(!q.done || S.questsClaimed[i]) return;
+    S.questsClaimed[i] = true;
+    S.money += q.r;
+    sfxBell(); toast(`🏅 Nhận thưởng +${money(q.r)}`);
+    syncHUD(); renderSheet();
+  });
+
+  /* weather */
+  sheet.querySelectorAll('[data-wxmode]').forEach(b=> b.onclick = ()=>{
+    S.wxMode = b.dataset.wxmode;
+    if(S.wxMode === 'live') fetchLiveWeather();
+    applyWeather(); renderSheet();
+  });
+  sheet.querySelectorAll('[data-wxtest]').forEach(b=> b.onclick = ()=>{
+    S.wxTest = b.dataset.wxtest;
+    applyWeather(); renderSheet();
+  });
+
+  /* generic actions */
+  sheet.querySelectorAll('[data-act]').forEach(b=> b.onclick = ()=> sheetAction(b.dataset.act, b));
+}
+
+function sheetAction(act, el){
+  switch(act){
+    case 'mix':
+      if(S.money < 20000) return toast('Không đủ tiền!');
+      S.money -= 20000; S.baits += 25; S.chumMixed = true;
+      sfxBell(); toast('🥣 Đã trộn mồi (+25 lần)'); syncHUD(); renderSheet(); break;
+    case 'buymix':
+      if(S.flavor < 0) return toast('Chọn phụ gia trước đã.');
+      if(S.money < FLAVORS[S.flavor].p) return toast('Không đủ tiền!');
+      S.money -= FLAVORS[S.flavor].p; S.chumMixed = true;
+      sfxBell(); toast('🧪 Đã pha tinh mùi '+FLAVORS[S.flavor].n); syncHUD(); renderSheet(); break;
+    case 'buybait':
+      if(S.money < 35000) return toast('Không đủ tiền!');
+      S.money -= 35000; S.baits += 30;
+      toast('🪱 +30 lần vê mồi'); syncHUD(); renderSheet(); break;
+    case 'buyflav':
+      if(S.money < FLAVORS[+el.dataset.i].p) return toast('Không đủ tiền!');
+      S.flavor = +el.dataset.i;
+      S.money -= FLAVORS[S.flavor].p;
+      toast('🧪 Mua tinh mùi '+FLAVORS[S.flavor].n); syncHUD(); renderSheet(); break;
+    case 'sell': {
+      if(!S.basket.length) return toast('Giỏ trống!');
+      const cashAmt = S.basketValue || (() => {
+        return S.basket.reduce((a,f)=>{
+          const base = FISH.find(x=>x.n===f.n||f.n.startsWith(x.n));
+          return a + Math.round(f.w*(base?base.v:300)/1000);
+        },0);
+      })();
+      S.money += cashAmt; S.basket = []; S.basketValue = 0;
+      sfxBell(); toast('💰 Bán cá được '+money(cashAmt)); syncHUD(); renderSheet(); break;
+    }
+    case 'extend':
+    case 'extend2':
+      if(S.money < 200000) return toast('Không đủ tiền!');
+      S.money -= 200000; S.sessionLeft += 7200; sessionClosed = false;
+      syncHUD(); sfxBell(); toast('⏳ Gia hạn +2 giờ'); closeSheet(); break;
+    case 'steal':
+      closeSheet(); doChum(true); break;
+  }
+}
+
+/* =========================================================
+   8. HUD / CHAT / TOAST
+   ========================================================= */
+function syncHUD(){
+  document.getElementById('moneyChip').textContent = '💰 ' + money(S.money);
+  document.getElementById('baitChip').textContent =
+    `🪱 Chậu mồi: ${S.baits} lần · ${S.chumMixed?'xả đã trộn':'xả chưa trộn'}`;
+}
+function fmtTime(sec){
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+let toastT = 0;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(()=> t.classList.remove('on'), 2200);
+}
+let chatTimer = 0;
+function setChat(msg){
+  const c = document.getElementById('chatBox');
+  c.textContent = msg; c.style.opacity = 1;
+  clearTimeout(chatTimer);
+  chatTimer = setTimeout(()=> c.style.opacity = 0.55, 6000);
+}
+
+/* neighbor chat feed */
+const NEIGH_MSGS = () => {
+  const f = FISH[Math.floor(Math.random()*FISH.length)];
+  const w = Math.round(f.min + Math.random()*(f.max-f.min));
+  const nb = NEIGHBORS[Math.floor(Math.random()*NEIGHBORS.length)];
+  const opts = [
+    `${nb} dính ${f.n} ${w} g`,
+    `${nb} giật hụt — phao đứng im`,
+    `${nb} kẹp xả ổ to, cá sủi bọt`,
+    `${nb} thay mồi, chậu còn ít`,
+    `${nb} lên ${f.n} ${w} g, chúc mừng!`
+  ];
+  return opts[Math.floor(Math.random()*opts.length)];
+};
+setInterval(()=>{ if(!S.hooked && S.fishing) setChat(NEIGH_MSGS()); }, 9000);
+
+/* =========================================================
+   9. BITE SYSTEM
+   ========================================================= */
+let biteTimer = 0, biteEscape = 0;
+
+function castOut(silent){
+  S.fishing = true; S.hooked = false; S.phase = 'idle';
+  S.floatOff = 0; S.pending = null;
+  document.getElementById('fight').style.display = 'none';
+  const sp = SPOTS[S.spot];
+  floatG.position.set(player.position.x + 2.6 + (Math.random()-0.5)*1.4, 0.02, -7.5 - sp.d);
+  floatG.position.z = -7.5 - (sp.d - 1.2)*1.2;
+  drawFloat();
+  if(!silent) sfxCast();
+  scheduleBite();
+  if(!S.baits){ setChat('⚠️ Hết mồi trong chậu! Mở Trộn mồi để thêm.'); }
+}
+
+function scheduleBite(){
+  clearTimeout(biteTimer); clearTimeout(biteEscape);
+  if(!S.fishing || S.baits <= 0) return;
+  const base = 9000 + Math.random()*16000;              // 9–25s
+  const delay = Math.max(2500, base / Math.max(0.25, S.effBite));
+  biteTimer = setTimeout(startBite, delay);
+}
+
+function startBite(){
+  if(!S.fishing || S.baits <= 0) return;
+
+  /* pick a fish matched to bait + spot */
+  const sp = SPOTS[S.spot];
+  const pool = FISH.filter(f => f.bait === S.baitType);
+  let list = pool.length ? pool : FISH;
+  let f = list[Math.floor(Math.random()*list.length)];
+  const vip = S.flavor >= 0 && Math.random() < 0.25;
+  const sizeBoost = vip ? 1.35 : 1;
+  const w = Math.max(f.min, Math.round((f.min + Math.random()*(f.max-f.min)) * sizeBoost * (0.7+Math.random()*0.6)));
+  S.pending = {name:f.n, w, str:f.str, vip};
+
+  S.baits--; if(S.baits < 0) S.baits = 0; syncHUD();
+
+  const roll = Math.random();
+  const rigSens = RIGS[S.rig].sens;
+  if(roll < 0.22){
+    doNibble();
+  }else if(roll < 0.58){
+    doSink();
+  }else if(roll < 0.84){
+    doRise();
+  }else{
+    doDrift();
+  }
+  /* window to strike */
+  S.biteWindow = performance.now();
+  armEscape();
+}
+
+function armEscape(){
+  clearTimeout(biteEscape);
+  biteEscape = setTimeout(()=>{
+    if(S.phase === 'sink' || S.phase === 'rise' || S.phase === 'drift'){
+      S.phase = 'idle'; S.floatOff = 0; S.pending = null; drawFloat();
+      setChat('🐟 Cá ăn rồi nhả — bỏ lỡ nhịp giật!');
+      scheduleBite();
+    }
+  }, 3200 / Math.max(0.6, RIGS[S.rig].sens));
+}
+
+/* --- signals --- */
+function doNibble(){
+  S.phase = 'nibble';
+  let n = 0;
+  const iv = setInterval(()=>{
+    if(S.phase !== 'nibble'){ clearInterval(iv); return; }
+    S.floatOff = Math.sin(n*1.6)*0.35;
+    drawFloat(); n++;
+    if(n > 8){
+      clearInterval(iv);
+      S.phase = 'idle'; S.floatOff = 0; S.pending = null; drawFloat();
+      setChat('🐟 Cá rỉa mồi — phao chỉ nhấp 2 nấc rồi đứng. Giật lúc này là hụt.');
+      scheduleBite();
+    }
+  }, 180);
+}
+function doSink(){
+  S.phase = 'sink';
+  let n = 0;
+  const iv = setInterval(()=>{
+    if(S.phase !== 'sink'){ clearInterval(iv); return; }
+    S.floatOff -= 0.18; drawFloat(); n++;
+    if(n > 22){ clearInterval(iv); }
+  }, 90);
+  tone(260,0.12,'sine',0.06);
+}
+function doRise(){
+  S.phase = 'rise';
+  let n = 0;
+  const iv = setInterval(()=>{
+    if(S.phase !== 'rise'){ clearInterval(iv); return; }
+    S.floatOff += 0.2; drawFloat(); n++;
+    if(n > 20){ clearInterval(iv); }
+  }, 110);
+  tone(340,0.1,'sine',0.05);
+}
+function doDrift(){
+  S.phase = 'drift';
+  S.floatOff = -0.4;
+  const iv = setInterval(()=>{
+    if(S.phase !== 'drift'){ clearInterval(iv); return; }
+    floatG.position.x += 0.09;
+    floatG.rotation.z = 0.5;
+    drawFloat();
+  }, 60);
+  tone(200,0.2,'triangle',0.06);
+}
+
+/* --- strike --- */
+function strike(){
+  if(S.hooked) return;
+  if(!S.pending) return;
+  const ph = S.phase;
+
+  if(ph === 'nibble'){
+    S.phase = 'idle'; S.floatOff = 0; drawFloat();
+    S.pending = null;
+    toast('❌ Giật hụt — cá mới rỉa mồi!');
+    sfxFail(); scheduleBite(); return;
+  }
+  if(ph === 'sink' || ph === 'rise' || ph === 'drift'){
+    /* success */
+    S.phase = 'idle';
+    floatG.rotation.z = 0;
+    sfxWhoosh();
+    enterFight();
+    return;
+  }
+  /* empty water tap: small ripple only */
+  sfxCast();
+}
+
+/* =========================================================
+   10. FIGHT
+   ========================================================= */
+function enterFight(){
+  const f = S.pending;
+  S.hooked = true; S.fishing = false;
+  S.fightT = 0; S.bail = 0; S.tension = 0.45;
+  document.getElementById('fight').style.display = 'block';
+  document.getElementById('fName').textContent = `🐟 ${f.name}${f.vip?' ⭐':''} — ${f.w} g đang kéo`;
+  setChat(`⚔️ Dính cá! ${f.name} ~${f.w} g — giật đều, đừng để thanh vào vùng đỏ.`);
+  sfxStrike();
+  tone(720,0.1,'square',0.12);
+  clearTimeout(biteEscape);
+}
+
+document.getElementById('btnPump').addEventListener('click', ()=>{
+  if(!S.hooked) return;
+  const f = S.pending;
+  S.tension += 0.13 + f.str*0.09;
+  sfxStrike();
+});
+document.getElementById('btnBail').addEventListener('click', ()=>{
+  if(!S.hooked || S.bail > 0) return;
+  S.bail = 1;
+  S.tension = Math.max(0.12, S.tension - 0.44);
+  toast('🛟 Xả dây bảo hiểm! Cứu cần khỏi đứt thẻo.');
+  tone(240,0.3,'sawtooth',0.16,110);
+});
+document.getElementById('btnNet').addEventListener('click', tryNet);
+
+function tryNet(){
+  if(!S.hooked || !S.pending) return;
+  if(S.fightT < 7){ toast('🥅 Cá chưa nổi — kéo thêm chút nữa!'); sfxFail(); return; }
+  land();
+}
+
+function land(){
+  const f = S.pending;
+  S.hooked = false;
+  document.getElementById('fight').style.display = 'none';
+  S.basket.push({n:f.name, w:f.w, spot:SPOTS[S.spot].n});
+  if(!S.records[f.name] || S.records[f.name] < f.w) S.records[f.name] = f.w;
+  sfxBell(); noiseSplash(0.6, 0.3);
+  splashRing(floatG.position.x, floatG.position.z, 2.2);
+  const big = f.w >= 2000;
+  toast(`🎣 Bắt được ${f.name} ${f.w} g!${big?' 🏆 CÁ TO!':''}`);
+  setChat(`${big?'🏆 ':'🎣 '}${f.name} ${f.w} g đã vào giỏ — mở Giỏ cá để bán.`);
+  S.pending = null;
+  syncHUD();
+  setTimeout(()=>{ if(!S.hooked) castOut(true); }, 900);
+}
+
+function loseFish(msg){
+  S.hooked = false;
+  document.getElementById('fight').style.display = 'none';
+  S.pending = null;
+  toast(msg); sfxFail();
+  setTimeout(()=>{ if(!S.hooked) castOut(true); }, 1100);
+}
+
+/* fight tick */
+let fightAcc = 0;
+function fightTick(dt){
+  if(!S.hooked || !S.pending) return;
+  const f = S.pending;
+  S.fightT += dt;
+  fightAcc += dt;
+
+  /* tension relaxes, big fish pull harder */
+  S.tension -= dt * (0.16 + f.str*0.14);
+  if(S.windPush) S.tension -= dt * 0.04;
+  /* fish occasionally pulls = tension spikes */
+  if(Math.random() < dt*0.55){
+    S.tension += 0.1 + Math.random()*f.str*0.2;
+  }
+  S.tension = Math.max(0, Math.min(1.2, S.tension));
+
+  /* bar + timer */
+  document.getElementById('tBar').style.width = Math.min(100, S.tension*100) + '%';
+  document.getElementById('fTimer').textContent = S.fightT.toFixed(1)+'s';
+
+  const netBtn = document.getElementById('btnNet');
+  const canNet = S.fightT >= 7;
+  netBtn.classList.toggle('dim', !canNet);
+
+  /* snap */
+  if(S.tension > 1.0){
+    const resist = REELS[S.reelLvl].load;
+    if(Math.random() < 0.5 / resist){
+      loseFish('💥 ĐỨT THẺO! Lẽ ra phải xả Dây bảo hiểm khi cá lao.');
+      return;
+    }else{
+      S.tension = 0.95;
+    }
+  }
+  /* slack -> fish off */
+  if(S.tension <= 0.02 && S.fightT > 2.5){
+    if(Math.random() < dt*0.9){
+      loseFish('❌ Dây chùng quá lâu — cá nhả mồi!');
+      return;
+    }
+  }
+  /* auto-land if held long in green */
+  if(S.fightT > 14 && S.tension > 0.25 && S.tension < 0.82){
+    land();
+  }
+}
+
+/* =========================================================
+   11. CHUM / XẢ Ổ
+   ========================================================= */
+function doChum(steal){
+  if(S.baits < 3){ toast('Không đủ mồi để xả ổ (cần 3 lần).'); sfxFail(); return; }
+  S.baits -= 3; syncHUD();
+  S.chumT = 1;
+  sfxPlop(); noiseSplash(0.5,0.3);
+  /* chum particles burst */
+  const cx = floatG.position.x, cz = floatG.position.z;
+  chumParts.forEach((p,i)=>{
+    const a = i/chumParts.length * Math.PI*2;
+    const r = 0.2 + Math.random()*1.6;
+    p.position.set(cx + Math.cos(a)*r, 0.05, cz + Math.sin(a)*r);
+    p.material.opacity = 0.9;
+    p.userData = {vx:Math.cos(a)*(steal?0.25:0.15), vz:Math.sin(a)*(steal?0.25:0.15), life: 1};
+  });
+  if(steal){
+    toast('🎯 Lấn ổ hàng xóm — cá bắt đầu dồn về!');
+    setChat('Bạn lén xả ổ sát ô bên — cá từ từ kéo sang.');
+  }else{
+    toast('🎯 Đã kẹp xả — tăm cá sủi bọt!');
+    setChat('Ổ mồi mới thả — chờ 20–40 giây cá kéo vào.');
+  }
+  splashRing(cx, cz, 1.6);
+  /* "Trúng ổ" floating text if cast lands near the chum spot */
+  const dist = Math.hypot(floatG.position.x - cx, floatG.position.z - cz);
+  if(dist < 3.2) showHookText('Trúng ổ');
+  /* boost bite rate for a while */
+  applyWeather();
+  setTimeout(()=>{ S.chumT = 0; applyWeather(); }, 40000);
+  /* re-cast to the chum spot */
+  castOut(true);
+  if(!S.hooked && !S.fishing) castOut(true);
+}
+
+function showHookText(txt){
+  const el = document.getElementById('hookText');
+  el.textContent = txt; el.classList.add('show');
+  sfxBell();
+  setTimeout(()=> el.classList.remove('show'), 1600);
+}
+
+/* =========================================================
+   12. TIME / SESSION
+   ========================================================= */
+let sessionClosed = false;
+setInterval(()=>{
+  if(S.sessionLeft > 0){
+    S.sessionLeft--;
+    document.getElementById('sessChip').textContent = '⏱ Ca câu ' + fmtTime(S.sessionLeft);
+    if(S.sessionLeft === 300) toast('⏳ Còn 5 phút cuối ca!');
+    if(S.sessionLeft === 0 && !sessionClosed){
+      sessionClosed = true;
+      openSheet('end');
+    }
+  }
+}, 1000);
+
+/* realtime weather HUD clock */
+setInterval(()=>{ if(!sheetMode) {/* keep HUD fresh */}
+  const now = new Date();
+  const clock = now.toLocaleTimeString('vi-VN',{hour12:false});
+  const dateStr = now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const w = resolveWeather();
+  document.getElementById('hudWx').innerHTML =
+    `<b>${DAYS[now.getDay()]}, ${dateStr} · ${clock}</b>` +
+    `${WX_LABEL[w.icon]||w.icon} · ${w.temp}°C<br>` +
+    `Ẩm ${w.hum}% · Gió ${w.wind} km/h` +
+    `<div class="sub">${w.test?'🧪 Tự chọn (Test)':(S.wxMode==='live'?wx.src:'Live')} · Chạm để đổi</div>`;
+}, 1000);
+
+/* periodic weather reapply (sky cycle) */
+setInterval(applyWeather, 30000);
+/* sun/moon position refresh every minute */
+setInterval(updateSkyBodies, 60000);
+
+/* =========================================================
+   13. CAMERA / WALK
+   ========================================================= */
+const CAM_NAMES = ['Góc nhìn thứ nhất','Qua vai','Cận cảnh phao'];
+function cycleCam(){
+  S.cam = (S.cam + 1) % 3;
+  toast('🎥 ' + CAM_NAMES[S.cam]);
+  document.querySelectorAll('.tbtn').forEach(b=> b.classList.toggle('on', b.dataset.open==='cam'));
+  setTimeout(()=> document.querySelectorAll('.tbtn').forEach(b=> b.classList.remove('on')), 400);
+}
+
+/* toolbar */
+document.querySelectorAll('[data-open]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    ac(); startAmbience();
+    const k = btn.dataset.open;
+    if(k === 'cam'){ cycleCam(); return; }
+    if(k === 'chum'){ doChum(false); return; }
+    openSheet(k);
+  });
+});
+document.getElementById('fsBtn').addEventListener('click', ()=>{
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
+  else document.exitFullscreen?.();
+});
+
+/* walk mode */
+const walkBtn = document.getElementById('walkBtn');
+const joyEl = document.getElementById('joy');
+const joyKnob = document.getElementById('joyKnob');
+walkBtn.style.display = 'block';
+walkBtn.addEventListener('click', ()=>{
+  S.walking = !S.walking;
+  walkBtn.classList.toggle('on', S.walking);
+  walkBtn.textContent = S.walking ? '🪑 Ngồi câu' : '🚶 Đi dạo';
+  joyEl.classList.toggle('on', S.walking);
+  if(S.walking){
+    setChat('Đi dạo quanh bờ hồ — kéo joystick góc trái để di chuyển.');
+    S.cam = 1;
+  }else{
+    S.cam = 0;
+    player.position.x = SPOTS[S.spot].x;
+    player.position.z = 8.6;
+  }
+});
+
+/* joystick */
+let joyActive = false, joyId = null, joyStart = {x:0,y:0};
+function joyDown(e){
+  joyActive = true; joyId = e.pointerId;
+  joyStart = {x:e.clientX, y:e.clientY};
+  joyKnob.style.transition = 'none';
+}
+function joyMove(e){
+  if(!joyActive || e.pointerId !== joyId) return;
+  let dx = e.clientX - joyStart.x, dy = e.clientY - joyStart.y;
+  const d = Math.hypot(dx,dy), max = 42;
+  if(d > max){ dx = dx/d*max; dy = dy/d*max; }
+  joyKnob.style.transform = `translate(${dx}px,${dy}px)`;
+  if(S.walking){
+    player.position.x += dx * 0.0035;
+    player.position.z += dy * 0.0035;
+    player.position.x = Math.max(-38, Math.min(38, player.position.x));
+    player.position.z = Math.max(6.2, Math.min(13, player.position.z));
+  }
+}
+function joyUp(){
+  joyActive = false; joyId = null;
+  joyKnob.style.transition = 'transform .2s';
+  joyKnob.style.transform = 'translate(0,0)';
+}
+joyEl.addEventListener('pointerdown', e=>{ e.preventDefault(); joyDown(e); joyEl.setPointerCapture(e.pointerId); });
+joyEl.addEventListener('pointermove', joyMove);
+joyEl.addEventListener('pointerup', joyUp);
+joyEl.addEventListener('pointercancel', joyUp);
+
+/* keyboard */
+window.addEventListener('keydown', e=>{
+  if(e.code === 'Space'){ e.preventDefault(); strike(); }
+  if(e.key === 'c' || e.key === 'C') cycleCam();
+  if(e.key === 'w' || e.key === 'W') walkBtn.click();
+  if(S.walking){
+    const sp = 0.35;
+    if(e.key === 'ArrowLeft') player.position.x -= sp;
+    if(e.key === 'ArrowRight') player.position.x += sp;
+    if(e.key === 'ArrowUp') player.position.z -= sp;
+    if(e.key === 'ArrowDown') player.position.z += sp;
+  }
+});
+
+/* tap canvas to strike (ignore UI) */
+canvas.addEventListener('pointerdown', e=>{
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  if(S.walking) return;
+  strike();
+});
+
+/* =========================================================
+   14. RENDER LOOP
+   ========================================================= */
+let last = performance.now();
+let tAcc = 0;
+const camTarget = new THREE.Vector3();
+const camPos = new THREE.Vector3();
+let camReady = false;
+
+function animate(now){
+  requestAnimationFrame(animate);
+  let dt = (now - last)/1000; last = now;
+  dt = Math.min(dt, 0.05);
+  tAcc += dt;
+
+  /* --- water waves --- */
+  const wp = waterPos;
+  const amp = S.windPush ? 0.16 : 0.075;
+  for(let i=0;i<wp.count;i++){
+    const x = wp.getX(i), y = wp.getY(i);
+    const z = Math.sin(x*0.25 + tAcc*1.4)*amp + Math.cos(y*0.22 + tAcc*1.05)*amp*0.8;
+    wp.setZ(i, z);
+  }
+  wp.needsUpdate = true;
+
+  /* --- rain --- */
+  if(rain.material.opacity > 0.01){
+    const rp = rainGeo.attributes.position;
+    for(let i=0;i<RAIN_N;i++){
+      let y = rp.getY(i) - dt*18;
+      if(y < -1){ y = 20; rp.setX(i, player.position.x + (Math.random()-0.5)*70); }
+      rp.setY(i, y);
+    }
+    rp.needsUpdate = true;
+  }
+
+  /* --- bubbles --- */
+  bubbles.forEach(b=>{
+    b.position.y += b.userData.v*dt;
+    if(b.position.y > 0.12) b.position.y = -0.5;
+  });
+
+  /* --- chum particles --- */
+  if(S.chumT > 0 || chumParts[0].material.opacity > 0.01){
+    chumParts.forEach(p=>{
+      if(p.material.opacity <= 0.01) return;
+      p.position.x += (p.userData.vx||0)*dt;
+      p.position.z += (p.userData.vz||0)*dt;
+      p.position.y += dt*0.05;
+      p.material.opacity -= dt*0.28;
+      if(p.material.opacity < 0) p.material.opacity = 0;
+    });
+  }
+
+  /* --- float bob / signals --- */
+  if(S.fishing && S.phase === 'idle'){
+    const bob = Math.sin(tAcc*2.1)*0.025 + (S.windPush? Math.sin(tAcc*3.6)*0.05 : 0);
+    floatG.position.y = bob;
+    if(S.floatOff !== 0 && Math.abs(S.floatOff) > 0.6){
+      S.floatOff *= 0.94;
+      drawFloat();
+    }
+    if(S.windPush) floatG.position.x += Math.sin(tAcc*0.7)*0.002;
+  }else if(S.hooked){
+    floatG.position.y = -0.5 + Math.sin(tAcc*9)*0.12;
+  }
+
+  /* --- fishing line --- */
+  const tipWorld = new THREE.Vector3();
+  rodTip.getWorldPosition(tipWorld);
+  const endPt = floatG.position.clone(); endPt.y += 0.9;
+  lineGeo.setFromPoints([tipWorld, endPt]);
+  lineGeo.attributes.position.needsUpdate = true;
+
+  /* --- rod bend --- */
+  let bend = 0;
+  if(S.hooked) bend = 0.22 + S.tension*0.18;
+  else if(S.phase === 'sink' || S.phase === 'drift') bend = 0.08;
+  rod.rotation.x = Math.PI/2.35 + bend;
+
+  /* --- float light --- */
+  floatLight.position.copy(floatG.position); floatLight.position.y = 0.7;
+
+  /* --- rivals slight bob --- */
+  rivals.forEach((r,i)=>{ r.rotation.z = Math.sin(tAcc*1.2 + i)*0.012; });
+
+  /* --- clouds drift --- */
+  clouds.forEach(c=>{
+    c.g.position.x += dt*c.sp;
+    if(c.g.position.x > 110) c.g.position.x = -110;
+  });
+  /* --- sky bodies slow sync (every frame is fine, cheap) --- */
+  skyDome.position.copy(camera.position);
+  /* --- water glitter twinkle --- */
+  if(sparks.material.opacity > 0.01){
+    const sp = sparkGeo.attributes.position;
+    for(let i=0;i<SPARK_N;i++){
+      sparkSeed[i] += dt*2;
+    }
+    sparks.material.size = 0.2 + Math.sin(tAcc*3)*0.04;
+  }
+  /* --- foam rings expand & fade --- */
+  foamRings.forEach(r=>{
+    if(r.userData.life > 0){
+      r.userData.life -= dt*0.42;
+      const k = 1 - Math.max(0, r.userData.life);
+      r.scale.setScalar(0.6 + k*3.2*r.userData.max);
+      r.material.opacity = Math.max(0, r.userData.life*0.75);
+      if(r.userData.life <= 0){ r.visible = false; }
+    }
+  });
+  /* --- ghost fish circling while fighting --- */
+  if(S.hooked){
+    ghostFish.visible = true;
+    const r = 0.9 + Math.sin(tAcc*0.6)*0.3;
+    ghostFish.position.set(
+      floatG.position.x + Math.cos(tAcc*1.6)*r,
+      -0.35 + Math.sin(tAcc*4)*0.08,
+      floatG.position.z + Math.sin(tAcc*1.6)*r
+    );
+    ghostFish.rotation.y = -tAcc*1.6 + Math.PI/2;
+  }else{
+    ghostFish.visible = false;
+  }
+
+  /* --- fight --- */
+  fightTick(dt);
+
+  /* --- camera --- */
+  if(S.cam === 0){
+    camPos.set(player.position.x, 3.4, 13.9);
+    camTarget.set(player.position.x + 1.4, 0.9, -8);
+  }else if(S.cam === 1){
+    camPos.set(player.position.x - 1.7, 3.0, 11.4);
+    camTarget.set(player.position.x + 2.4, 0.5, -8);
+  }else{
+    camPos.set(floatG.position.x + 0.9, 1.6, floatG.position.z + 2.6);
+    camTarget.copy(floatG.position); camTarget.y = 0.3;
+  }
+  if(!camReady){ camera.position.copy(camPos); camReady = true; }
+  else camera.position.lerp(camPos, 1 - Math.pow(0.0025, dt));
+  camera.lookAt(camTarget);
+
+  /* headlamp follow */
+  if(S.night){
+    headLamp.position.set(player.position.x, 5.6, player.position.z);
+    headLamp.target.position.copy(floatG.position);
+    headLamp.target.updateMatrixWorld();
+  }
+
+  renderer.render(scene, camera);
+}
+
+/* =========================================================
+   15. BOOT
+   ========================================================= */
+syncHUD();
+castOut(true);
+applyWeather();
+setTimeout(()=>{ fetchLiveWeather(); }, 600);
+setTimeout(()=> document.getElementById('boot')?.classList.add('off'), 500);
+requestAnimationFrame(now=>{ last = now; animate(now); });
+
+/* unlock audio on first interaction */
+['pointerdown','touchstart','keydown'].forEach(ev=>{
+  window.addEventListener(ev, ()=>{ ac(); startAmbience(); }, {once:true, passive:true});
+});
+
+/* pause bite scheduling when tab hidden */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ clearTimeout(biteTimer); clearTimeout(biteEscape); }
+  else if(S.fishing && !S.hooked) scheduleBite();
+});
+</script>
+</body>
+</html>
