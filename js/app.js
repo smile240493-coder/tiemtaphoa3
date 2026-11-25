@@ -39,7 +39,7 @@ if(ORDER_HOOK){try{await fetch(ORDER_HOOK,{method:"POST",mode:"no-cors",headers:
 return ok};
 if(!SB.on){P=rd(K.p,null)||P;S=rd(K.s,null)||S}else{const R=await loadRemote();if(R&&(page==="admin"||R.settings.ready||R.products.length)){P=R.products;S=R.settings}}
 const saveC=()=>{wr(K.c,C);badge()};
-const badge=()=>{const n=Object.values(C).reduce((a,b)=>a+b,0),e=$("#cn");if(e)e.textContent=n};
+const badge=()=>{const n=Object.values(C).reduce((a,b)=>a+b,0),e=$("#cn");if(e){e.textContent=n;e.hidden=!n}};
 const cats=()=>[...new Set(P.map(p=>p.cat))];
 const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
 const shrink=(f,max,q)=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",q))};i.onerror=no;i.src=r.result};r.onerror=no;r.readAsDataURL(f)});
@@ -73,7 +73,7 @@ const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thi�
 const cu=me();
 $("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="/" aria-label="Tiệm Tạp Hóa - Trang chủ">${IC.logo}<span class="lt"><b>Tiệm <i>Tạp</i> Hóa</b><small>Điện thoại · Gia dụng · Đồ tiện ích</small></span></a>
 <div class="dd dm"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">${IC.menu}<span>Danh mục</span></button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}"><span class="mi">${c.icon}</span>${esc(c.name)}</a>`).join("")}</div></div>
-<form class="search" action="san-pham.html" role="search"><input name="q" type="search" placeholder="Tìm sản phẩm bạn cần…" aria-label="Tìm sản phẩm"><button class="btn gold" aria-label="Tìm">${IC.search}<span class="stx">Tìm</span></button></form>
+<form class="search" action="san-pham.html" role="search"><input name="q" type="search" placeholder="Tìm sản phẩm…" aria-label="Tìm sản phẩm"><button class="btn gold" aria-label="Tìm">${IC.search}<span class="stx">Tìm</span></button></form>
 <a class="cartlink" href="gio-hang.html" aria-label="Giỏ hàng">${IC.cart}<span id="cn">0</span></a>
 <div class="dd ac"><button class="btn sec" id="ab" aria-expanded="false" aria-controls="am" aria-label="Tài khoản">${IC.user}<span class="acn">${cu?esc(cu.name.split(" ").pop()):"Tài khoản"}</span></button><div class="menu right" id="am" hidden>${cu?`<a href="tai-khoan.html">Tài khoản của tôi</a><button id="lg">Đăng xuất</button>`:`<a href="dang-nhap.html">Đăng nhập</a><a href="dang-nhap.html#dang-ky">Đăng ký</a>`}</div></div></nav>
 <div class="sub">${links.map(l=>`<a class="${l[2]===page?"on":""}" href="${l[0]}"${l[2]===page?' aria-current="page"':""}>${l[1]}</a>`).join("")}</div>`;

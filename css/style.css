@@ -205,3 +205,12 @@ footer .copy{border-top:1px solid rgba(255,255,255,.12);text-align:center;paddin
 /* Khung mời chơi game ở trang chủ */
 .gpromo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 24px;border-radius:20px;background:linear-gradient(135deg,#eaf1ff,#fff3df);border:1px solid var(--line)}
 .gpromo h2{margin:0 0 4px;font-size:1.2rem}.gpromo p{margin:0;color:var(--mut)}
+
+/* Sửa thanh đầu trang trên điện thoại: giỏ hàng không còn đè lên tên cửa hàng */
+.cartlink span[hidden]{display:none}
+@media(max-width:760px){
+.nav{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"logo logo cart ac" "dm search search search";align-items:center}
+.logo{min-width:0}.logo b{font-size:1.18rem}
+.cartlink,.dd.ac{justify-self:end}
+.nav .search{min-width:0}.nav .search input{min-width:0}
+}
