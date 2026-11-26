@@ -1,0 +1,86 @@
+BỘ CÔNG CỤ HOÀN TIỀN CHO KHÁCH MUA QUA LINK SHOPEE
+===================================================
+
+TRONG GÓI CÓ 3 FILE
+- index.html   Trang cho KHÁCH. Khách nhập tên, ngân hàng, số tài khoản, dán link sản phẩm,
+               trang tự chuyển sang Shopee bằng link tiếp thị của bạn.
+- so-don.html  Sổ của BẠN. Nhập khách từ Google Sheets, ghi đơn, tính tiền hoàn,
+               xem ai cần chuyển khoản bao nhiêu.
+- go.html      (Không bắt buộc) Tạo link sản phẩm tự chuyển sang link tiếp thị,
+               để bạn đăng thẳng lên Facebook, Zalo, blog.
+
+
+PHẦN A. CÀI ĐẶT (làm một lần)
+-----------------------------
+Bước 1. Tạo Google Form nhận thông tin khách
+  1. Vào forms.google.com, tạo form mới.
+  2. Tạo đúng 6 câu hỏi dạng "Trả lời ngắn", ĐÚNG THỨ TỰ:
+       1) Tên chủ tài khoản
+       2) SĐT/Zalo
+       3) Ngân hàng
+       4) Số tài khoản
+       5) Mã khách
+       6) Sản phẩm
+     Tất cả để KHÔNG bắt buộc. Không bật yêu cầu đăng nhập, không thu thập email.
+  3. Bấm dấu ba chấm ở góc trên phải, chọn "Nhận đường liên kết điền sẵn".
+     Gõ chữ bất kỳ vào cả 6 ô, bấm "Nhận đường liên kết", rồi sao chép.
+     Link phải bắt đầu bằng docs.google.com/forms/... (link forms.gle không dùng được).
+  4. Vào tab "Câu trả lời" của form, bấm biểu tượng Google Sheets để tạo bảng nhận dữ liệu.
+
+Bước 2. Điền cấu hình vào index.html
+  1. Mở index.html bằng Notepad.
+  2. Tìm 2 dòng này (gần cuối file):
+       var AFF_ID    = '';
+       var FORM_LINK = '';
+  3. Điền mã affiliate của bạn (dạng an_17123456789) và link Google Form vừa sao chép
+     vào giữa 2 dấu nháy. Lưu file.
+
+Bước 3. Đưa lên GitHub Pages
+  1. Vào github.com, tạo tài khoản, bấm dấu + > New repository.
+     Đặt tên (ví dụ: shopee), chọn Public, bấm Create repository.
+  2. Bấm "uploading an existing file", kéo cả 3 file vào, bấm Commit changes.
+  3. Vào Settings > Pages. Ở Build and deployment chọn "Deploy from a branch",
+     nhánh main, thư mục / (root), bấm Save.
+  4. Đợi 1-2 phút. Địa chỉ của bạn sẽ là:
+       Trang cho khách : https://TENBAN.github.io/shopee/
+       Sổ đơn của bạn  : https://TENBAN.github.io/shopee/so-don.html
+       Tạo link (tuỳ)  : https://TENBAN.github.io/shopee/go.html
+     (thay TENBAN bằng tên tài khoản GitHub của bạn)
+
+Bước 4. MUA THỬ MỘT ĐƠN trước khi đưa cho khách
+  Dùng chính trang cho khách để mua thử một sản phẩm rẻ, rồi vào báo cáo Shopee Affiliate
+  xem đơn có được ghi nhận cho bạn không, và Sub ID (mã khách) có hiện ra không.
+  Nếu đơn KHÔNG được ghi nhận, cách gắn mã trong bộ công cụ này không phù hợp với tài khoản
+  của bạn, đừng đưa cho khách dùng khi chưa kiểm tra.
+
+
+PHẦN B. DÙNG HẰNG NGÀY
+----------------------
+1. Đưa khách địa chỉ trang cho khách (https://TENBAN.github.io/shopee/).
+2. Khách điền thông tin, dán link sản phẩm, tự chuyển sang Shopee và mua.
+3. Mở so-don.html > mục 2: vào Google Sheets nhận câu trả lời, chọn các dòng khách mới,
+   sao chép, dán vào ô và bấm "Nhập khách".
+4. Khi Shopee báo có đơn (báo cáo Shopee Affiliate), tìm Sub ID trong báo cáo. Đó chính là
+   "Mã khách". Vào mục 4 "Ghi nhận đơn hàng", gõ mã khách (tên khách tự điền), nhập giá trị
+   đơn, trạng thái, bấm Thêm đơn.
+5. Khi Shopee DUYỆT hoa hồng và trả cho bạn, đổi trạng thái đơn sang "Đã duyệt".
+   Mục 6 sẽ hiện ngân hàng, số tài khoản và số tiền cần chuyển cho từng khách.
+6. Chuyển khoản xong, bấm "Đã trả" ở mục 6.
+7. Cuối ngày bấm "Tạo bản sao lưu" ở mục 8 và lưu vào Ghi chú hoặc Google Docs.
+
+
+LƯU Ý QUAN TRỌNG
+----------------
+- Số tài khoản là thông tin nhạy cảm. Chỉ chia sẻ Google Sheets cho người thật sự cần.
+- Mã nguồn trên GitHub công khai nên ai cũng xem được link Google Form. Có thể có người gửi
+  dữ liệu rác vào bảng. Bạn đối chiếu theo mã khách trong báo cáo Shopee, dòng nào không khớp
+  thì bỏ qua.
+- Link rút gọn (s.shopee.vn, shp.ee) trang không đổi được. Trang sẽ nhắc khách mở link đó,
+  rồi sao chép lại link đầy đủ trên thanh địa chỉ (dạng shopee.vn/...). Hãy tự thử xem link
+  chia sẻ trong ứng dụng Shopee của bạn là loại nào.
+- Chỉ chuyển tiền cho khách sau khi Shopee đã duyệt và trả hoa hồng cho bạn.
+- Sổ đơn (so-don.html) lưu dữ liệu trong trình duyệt của chính máy bạn. Đổi máy hoặc xoá lịch sử
+  trình duyệt sẽ mất dữ liệu nếu chưa sao lưu. Chỉ dùng sổ trên một máy.
+- Hãy đọc chính sách Shopee Affiliate về việc chia sẻ hoa hồng cho người mua để tránh bị
+  khoá tài khoản.
+- Công cụ chỉ tính toán và ghi sổ. Nó không tự chuyển tiền.
