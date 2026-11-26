@@ -7,5 +7,4 @@ window.CFG = {
   supabaseKey: "sb_publishable_bX0JPOujK3LAqNDzEy7ytw_c1QDAaqe",       /* Khóa công khai (Publishable key, bắt đầu bằng sb_publishable_) */
   orderHook: "https://script.google.com/macros/s/AKfycbwA9hZocnkBW7yhzJBFyL6wme-2wO91aWrDtSfQCL_QPlB-NzNh8D43EBOeT22ZV8P-/exec"          /* Dán link Google Apps Script (kết thúc bằng /exec) để nhận đơn qua Google Sheets và Gmail */
 };
-  cashbackPercent: 50,
-  shopeeDeeplink: "17344760343",
+ 
