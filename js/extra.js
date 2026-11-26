@@ -48,6 +48,15 @@
     });
   }
   var shrink = function (f, m, q) { return (window.__testShrink || realShrink)(f, m, q); };
+  function fail(stage, r) {
+    return r.text().then(function (t) {
+      var d = "";
+      try { var j = JSON.parse(t); d = j.message || j.error || j.hint || ""; } catch (e) { d = t || ""; }
+      var e = new Error(stage + " " + r.status + (d ? " " + String(d).replace(/\s+/g, " ").slice(0, 90) : ""));
+      throw e;
+    }, function () { throw new Error(stage + " " + r.status); });
+  }
+  function why(err) { return ' <small style="font-weight:500;opacity:.8">(Mã lỗi: ' + esc(String(err && err.message || err).slice(0, 140)) + ")</small>"; }
   var field = function (f, k, n) { return String(f.get(k) == null ? "" : f.get(k)).trim().slice(0, n); };
 
   /* ===== Đặt hàng theo ảnh ===== */
@@ -91,21 +100,21 @@
         for (i = 0; i < files.length; i++) {
           var p = "rq/" + Date.now() + "-" + rand(10) + ".jpg";
           var r = await api("/storage/v1/object/requests/" + p, { headers: { "Content-Type": "image/jpeg" }, body: files[i].blob });
-          if (!r.ok) throw new Error("upload " + r.status);
+          if (!r.ok) await fail("upload", r);
           paths.push(p);
         }
         var row = { name: name, phone: phone, addr: addr, note: note, qty: qty, link: link, images: paths }, code = "", done = false;
         for (var t = 0; t < 3 && !done; t++) {
           code = "AN" + rand(6);
           var r2 = await api("/rest/v1/photo_orders", { json: Object.assign({ code: code }, row), headers: { Prefer: "return=minimal" } });
-          if (r2.ok) done = true; else if (r2.status !== 409) throw new Error("insert " + r2.status);
+          if (r2.ok) done = true; else if (r2.status !== 409) await fail("insert", r2);
         }
         if (!done) throw new Error("code");
         hook({ id: code, name: name, phone: phone, addr: addr, note: "Đặt theo ảnh. " + note, total: 0, items: ["[Đặt theo ảnh] " + note + " × " + qty + " (" + paths.length + " ảnh, xem trong trang quản trị)"] });
         form.reset(); files.forEach(function (x) { try { URL.revokeObjectURL(x.url); } catch (z) {} }); files = []; render();
         msg(out, "🎉 Đã gửi yêu cầu! Mã của bạn: <b>" + code + "</b>. Tiệm Tạp Hóa sẽ liên hệ báo giá qua điện thoại hoặc Zalo. Bạn chỉ chốt đơn khi đồng ý giá.");
       } catch (err) {
-        msg(out, 'Chưa gửi được yêu cầu. Bạn thử lại hoặc nhắn ảnh qua <a href="' + ZALO + '" target="_blank" rel="noopener">Zalo</a> nhé.', true);
+        msg(out, 'Chưa gửi được yêu cầu. Bạn thử lại hoặc nhắn ảnh qua <a href="' + ZALO + '" target="_blank" rel="noopener">Zalo</a> nhé.' + why(err), true);
       } finally { btn.disabled = false; btn.textContent = "Gửi yêu cầu"; }
     });
   }
@@ -144,7 +153,7 @@
         for (var t = 0; t < 3 && !done; t++) {
           code = "HT" + rand(6);
           var r = await api("/rest/v1/cashback", { json: { code: code, name: name, phone: phone, shopee_link: link }, headers: { Prefer: "return=minimal" } });
-          if (r.ok) done = true; else if (r.status !== 409) throw new Error("insert " + r.status);
+          if (r.ok) done = true; else if (r.status !== 409) await fail("insert", r);
         }
         if (!done) throw new Error("code");
         hook({ id: code, name: name, phone: phone, addr: "(Hoàn tiền Shopee)", note: "Yêu cầu hoàn tiền Shopee", total: 0, items: ["[Hoàn tiền Shopee] " + link] });
@@ -153,7 +162,7 @@
           (aff ? "Bấm nút dưới đây để mở Shopee và mua hàng <b>ngay trong lần bấm này</b>:<br><br>" + openBtn(aff)
                : "Chúng tôi sẽ gửi <b>link mua hàng riêng</b> cho bạn qua điện thoại hoặc Zalo. Bạn cũng có thể tra cứu bằng mã ở mục 3 bên dưới."));
         f1.reset();
-      } catch (err) { msg(out, 'Chưa tạo được yêu cầu, bạn thử lại hoặc nhắn qua <a href="' + ZALO + '" target="_blank" rel="noopener">Zalo</a> nhé.', true); }
+      } catch (err) { msg(out, 'Chưa tạo được yêu cầu, bạn thử lại hoặc nhắn qua <a href="' + ZALO + '" target="_blank" rel="noopener">Zalo</a> nhé.' + why(err), true); }
       finally { b.disabled = false; }
     });
     f2.addEventListener("submit", async function (e) {
