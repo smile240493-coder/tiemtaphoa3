@@ -68,8 +68,12 @@ search:'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path
 phone:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
 chat:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
 logo:'<svg viewBox="0 0 32 32" width="38" height="38" aria-hidden="true"><path d="M4 12 6.5 5h19L28 12z" fill="#e11d2e"/><path d="M4 12h24v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0 4 4 0 0 1-8 0z" fill="#ffc21a"/><path d="M6 17h20v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z" fill="#1f4fd8"/><rect x="13" y="20" width="6" height="8" rx="1" fill="#fff"/></svg>'};
+const safeUrl=u=>/^https?:\/\//i.test(u||"")?String(u):"";
+const affLink=(link,code)=>{const t=(window.CFG&&CFG.shopeeDeeplink)||"";if(!/^https:\/\//.test(t)||t.indexOf("{url}")<0)return"";return t.split("{url}").join(encodeURIComponent(link)).split("{sub}").join(encodeURIComponent(code))};
+const okPath=p=>/^rq\/\d+-[A-Z0-9]{10}\.jpg$/.test(String(p));
+const PST=["Mới","Đã báo giá","Đã chốt đơn","Đã hủy"],CST=["Mới","Đã gửi link","Khách báo đã mua","Chờ đối soát","Đã có hoa hồng","Đã hoàn tiền","Không đủ điều kiện"];
 /* Header & footer */
-const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["/game","Giải trí","game"],["lien-he.html","Liên hệ","contact"]];
+const links=[["index.html","Trang chủ","home"],["gioi-thieu.html","Giới thiệu","about"],["san-pham.html","Sản phẩm","products"],["dat-theo-anh.html","Đặt theo ảnh","photo"],["hoan-tien-shopee.html","Hoàn tiền Shopee","cashback"],["/game","Giải trí","game"],["lien-he.html","Liên hệ","contact"]];
 const cu=me();
 $("#hdr").innerHTML=`<nav class="nav" aria-label="Chính"><a class="logo" href="/" aria-label="Tiệm Tạp Hóa - Trang chủ">${IC.logo}<span class="lt"><b>Tiệm <i>Tạp</i> Hóa</b><small>Điện thoại · Gia dụng · Đồ tiện ích</small></span></a>
 <div class="dd dm"><button class="btn gold" id="cb" aria-expanded="false" aria-controls="cm">${IC.menu}<span>Danh mục</span></button><div class="menu" id="cm" hidden>${catItems().map(c=>`<a href="san-pham.html?cat=${encodeURIComponent(c.name)}"><span class="mi">${c.icon}</span>${esc(c.name)}</a>`).join("")}</div></div>
@@ -237,8 +241,11 @@ $("#cb-f",box).onsubmit=e=>{e.preventDefault();ask(inp.value);inp.value=""};
 $$("[data-q]",box).forEach(b=>b.onclick=()=>ask(b.dataset.q))}
 /* Quản trị */
 if(page==="admin"){
-const A=$("#adm");let tab="p",w=null,OD=null,ok=SB.on?!!ses():sessionStorage.getItem("lh_ok")==="1";
+const A=$("#adm");let tab="p",w=null,OD=null,PRD=null,CBD=null,ok=SB.on?!!ses():sessionStorage.getItem("lh_ok")==="1";
 const getO=async()=>{if(!SB.on)return rd(K.o,[]);if(OD===null){try{OD=await api("/rest/v1/orders?select=*&order=created_at.desc&limit=300",{},true)}catch(e){OD=[]}}return OD};
+const getPR=async()=>{if(PRD===null){try{PRD=await api("/rest/v1/photo_orders?select=*&order=created_at.desc&limit=200",{},true)}catch(e){PRD=[]}}return PRD};
+const getCB=async()=>{if(CBD===null){try{CBD=await api("/rest/v1/cashback?select=*&order=created_at.desc&limit=300",{},true)}catch(e){CBD=[]}}return CBD};
+const patchRow=async(table,id,json)=>{const r=await api("/rest/v1/"+table+"?id=eq."+id,{method:"PATCH",json,headers:{Prefer:"return=representation"}},true);if(!r.length)throw new Error("Không đủ quyền cập nhật.");return r[0]};
 const save=async()=>{if(SB.on){try{await saveSettings()}catch(e){alert("Không lưu được: "+e.message)}return}if(!(wr(K.p,P)&&wr(K.s,S)))alert("Bộ nhớ trình duyệt đã đầy. Hãy dùng đường dẫn ảnh (img/ten.jpg) hoặc xóa bớt ảnh tải lên.")};
 const dl=()=>{const b=new Blob(["window.SHOP="+JSON.stringify({settings:S,products:P},null,1)+";\n"],{type:"text/javascript"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="data.js";a.click()};
 const draw=async()=>{
@@ -250,10 +257,39 @@ $("#lf").onsubmit=e=>{e.preventDefault();if($("#pw").value===ADMIN_PASS){ok=true
 const O=await getO();
 A.innerHTML=`<div class="adm-head"><h1>Quản trị</h1><div class="acts">${SB.on?"":'<button class="btn sm" id="dl">Tải data.js để đăng lên web</button>'}<button class="btn sec sm" id="lo">Đăng xuất</button></div></div>
 ${SB.on?'<p class="note">Thay đổi được lưu thẳng lên web, khách thấy ngay, không cần tải file hay đưa lên GitHub.</p>':'<p class="note">Thay đổi đang lưu như bản nháp trên máy này. Khách chỉ thấy sau khi bạn tải <strong>data.js</strong>, chép đè vào thư mục <strong>js/</strong> rồi đưa lên GitHub để Vercel cập nhật.</p>'}
-<div class="tabs"><button class="btn ${tab==="p"?"":"sec"}" data-t="p">Sản phẩm (${P.length})</button><button class="btn ${tab==="s"?"":"sec"}" data-t="s">Banner & nền</button><button class="btn ${tab==="c"?"":"sec"}" data-t="c">Danh mục</button><button class="btn ${tab==="o"?"":"sec"}" data-t="o">Đơn hàng (${O.length})</button></div><div id="tb"></div>`;
-if($("#dl"))$("#dl").onclick=dl;$("#lo").onclick=()=>{sessionStorage.removeItem("lh_ok");localStorage.removeItem("lh_sb");OD=null;ok=false;draw()};
+<div class="tabs"><button class="btn ${tab==="p"?"":"sec"}" data-t="p">Sản phẩm (${P.length})</button><button class="btn ${tab==="s"?"":"sec"}" data-t="s">Banner & nền</button><button class="btn ${tab==="c"?"":"sec"}" data-t="c">Danh mục</button><button class="btn ${tab==="o"?"":"sec"}" data-t="o">Đơn hàng (${O.length})</button>${SB.on?`<button class="btn ${tab==="pr"?"":"sec"}" data-t="pr">Đặt theo ảnh${PRD?" ("+PRD.filter(r=>r.status==="Mới").length+")":""}</button><button class="btn ${tab==="cb"?"":"sec"}" data-t="cb">Hoàn tiền Shopee${CBD?" ("+CBD.filter(r=>r.status==="Khách báo đã mua").length+")":""}</button>`:""}</div><div id="tb"></div>`;
+if($("#dl"))$("#dl").onclick=dl;$("#lo").onclick=()=>{sessionStorage.removeItem("lh_ok");localStorage.removeItem("lh_sb");OD=PRD=CBD=null;ok=false;draw()};
 $$("[data-t]",A).forEach(b=>b.onclick=()=>{tab=b.dataset.t;w=null;draw()});
 const tb=$("#tb"),DK=dupKeys();
+if(tab==="pr"&&SB.on){const R=await getPR();
+tb.innerHTML=`<p><button class="btn sec sm" id="rpr">Tải lại yêu cầu</button> <span class="muted">${R.filter(r=>r.status==="Mới").length} yêu cầu mới</span></p>`+(R.length?R.map(r=>`<div class="rq"><div><b>${esc(r.code)}</b> · ${esc(dmy(r.created_at))} · SL ${+r.qty||1}</div><div>${esc(r.name)} · <a href="tel:${esc(r.phone)}">${esc(r.phone)}</a><br><small>${esc(r.addr)}</small></div><p style="margin:0">${esc(r.note)}</p>${safeUrl(r.link)?`<div><a href="${esc(safeUrl(r.link))}" target="_blank" rel="noopener nofollow">Link tham khảo</a></div>`:""}<div class="rqi">${(Array.isArray(r.images)?r.images:[]).filter(okPath).map(p=>`<img data-pimg="${esc(p)}" alt="Ảnh khách gửi" width="120" height="120">`).join("")}</div><div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><select data-ps="${r.id}" aria-label="Trạng thái">${PST.map(s=>`<option ${s===r.status?"selected":""}>${s}</option>`).join("")}</select><input data-pn="${r.id}" value="${esc(r.admin_note||"")}" placeholder="Ghi chú (giá đã báo...)" maxlength="300" aria-label="Ghi chú"></div></div>`).join(""):"<p>Chưa có yêu cầu nào.</p>");
+if($("#rpr"))$("#rpr").onclick=()=>{PRD=null;draw()};
+$$("[data-ps]",tb).forEach(s=>s.onchange=async()=>{try{const x=await patchRow("photo_orders",s.dataset.ps,{status:s.value}),o=PRD.find(z=>String(z.id)===s.dataset.ps);if(o)o.status=x.status}catch(e){alert(e.message)}});
+$$("[data-pn]",tb).forEach(i=>i.onchange=async()=>{try{const x=await patchRow("photo_orders",i.dataset.pn,{admin_note:i.value.trim().slice(0,300)}),o=PRD.find(z=>String(z.id)===i.dataset.pn);if(o)o.admin_note=x.admin_note}catch(e){alert(e.message)}});
+$$("[data-pimg]",tb).forEach(async im=>{try{const s=await token();if(!s)return;const r=await fetch(SB.url+"/storage/v1/object/authenticated/requests/"+im.dataset.pimg,{headers:{apikey:SB.key,Authorization:"Bearer "+s.access_token}});if(r.ok){im.src=URL.createObjectURL(await r.blob());im.onclick=()=>window.open(im.src,"_blank")}}catch(e){}});
+return}
+if(tab==="cb"&&SB.on){const R=await getCB(),dp=+(window.CFG&&CFG.cashbackPercent)||50,tmpl=!!affLink("https://shopee.vn/x","T");
+const ben=r=>Math.floor((+r.commission||0)*((+r.percent)||dp)/100);
+const T=R.reduce((s,r)=>{if(r.status==="Không đủ điều kiện")return s;s.com+=+r.commission||0;if(r.status==="Đã hoàn tiền")s.paid+=ben(r);else if(r.commission>0)s.owe+=ben(r);return s},{com:0,owe:0,paid:0});
+tb.innerHTML=`<p class="muted">Hoa hồng Shopee đã nhận: <b>${vnd(T.com)}</b> · Cần hoàn cho khách: <b>${vnd(T.owe)}</b> · Đã hoàn: <b>${vnd(T.paid)}</b>. Tỷ lệ hoàn mặc định ${dp}% (đổi ở cashbackPercent trong config.js).</p><p><button class="btn sec sm" id="rcb">Tải lại</button></p>`+(R.length?R.map(r=>{const sl=safeUrl(r.shopee_link),al=r.aff_link||affLink(r.shopee_link,r.code);return `<div class="cbx" data-cb="${r.id}"><div><b>${esc(r.code)}</b> · ${esc(dmy(r.created_at))} · ${esc(r.name)} · <a href="tel:${esc(r.phone)}">${esc(r.phone)}</a></div>
+<div>Link khách dán: ${sl?`<a href="${esc(sl)}" target="_blank" rel="noopener nofollow">${esc(sl.slice(0,70))}${sl.length>70?"…":""}</a>`:"(không hợp lệ)"}</div>
+<div>${tmpl?`Link mua hàng (tự tạo): ${al?`<a href="${esc(al)}" target="_blank" rel="noopener nofollow">mở thử</a>`:"-"}`:`<label>Link mua hàng tiếp thị liên kết (tạo ở Shopee Affiliate, đặt Sub ID là <b>${esc(r.code)}</b>)<input data-f="aff" value="${esc(r.aff_link||"")}" placeholder="https://s.shopee.vn/..."></label>`}</div>
+<div>${r.order_id?`Mã đơn Shopee: <b>${esc(r.order_id)}</b> · Nhận tiền: ${esc(r.bank_name)} · ${esc(r.bank_no)} · ${esc(r.bank_owner)}`:'<span class="muted">Khách chưa báo mã đơn.</span>'}</div>
+<div class="row2"><label>Hoa hồng Shopee đã trả (₫)<input data-f="com" inputmode="numeric" value="${r.commission||""}"></label><label>% hoàn cho khách<input data-f="pct" inputmode="numeric" value="${r.percent||""}" placeholder="${dp}"></label><label>Trạng thái<select data-f="st">${CST.map(s=>`<option ${s===r.status?"selected":""}>${s}</option>`).join("")}</select></label></div>
+<div>Số tiền hoàn cho khách: <b>${vnd(ben(r))}</b>${r.paid_at?` · đã chuyển ${esc(dmy(r.paid_at))}`:""}</div>
+<label>Ghi chú<input data-f="note" value="${esc(r.admin_note||"")}" maxlength="300"></label>
+<div class="acts"><button class="btn sm" data-cs="${r.id}">Lưu</button><button class="btn sec sm" data-cp2="${r.id}">Đã chuyển tiền cho khách</button></div></div>`}).join(""):"<p>Chưa có yêu cầu hoàn tiền nào.</p>");
+const saveCB=async(id,paid)=>{const card=$('[data-cb="'+id+'"]',tb),g=f=>{const e=$("[data-f="+f+"]",card);return e?e.value:null},r0=CBD.find(z=>String(z.id)===String(id));if(!r0)return;
+const com=Math.max(0,parseInt(String(g("com")||"").replace(/[^\d]/g,""))||0),pc=Math.min(100,Math.max(0,parseInt(g("pct"))||0));
+if(paid&&!com){alert("Hãy nhập số hoa hồng Shopee đã trả trước khi đánh dấu đã chuyển tiền cho khách.");return}
+const json={commission:com,percent:com>0?(pc||dp):pc,status:paid?"Đã hoàn tiền":(g("st")||r0.status),admin_note:String(g("note")||"").trim().slice(0,300)};
+const af=g("aff");if(af!==null){const v=af.trim();if(v&&!/^https:\/\//.test(v)){alert("Link mua hàng phải bắt đầu bằng https://");return}json.aff_link=v;if(v&&json.status==="Mới")json.status="Đã gửi link"}
+if(paid)json.paid_at=new Date().toISOString();
+try{Object.assign(r0,await patchRow("cashback",id,json));draw()}catch(e){alert(e.message)}};
+if($("#rcb"))$("#rcb").onclick=()=>{CBD=null;draw()};
+$$("[data-cs]",tb).forEach(b=>b.onclick=()=>saveCB(b.dataset.cs,false));
+$$("[data-cp2]",tb).forEach(b=>b.onclick=()=>{if(confirm("Xác nhận bạn đã chuyển tiền hoàn cho khách này?"))saveCB(b.dataset.cp2,true)});
+return}
 if(tab==="o"){const oo=O.map(o=>SB.on?{id:o.code,rid:o.id,time:new Date(o.created_at).toLocaleString("vi-VN"),name:o.name,phone:o.phone,addr:o.addr,note:o.note,items:o.items||[],total:o.total,status:o.status}:o);
 tb.innerHTML=(SB.on?'<p><button class="btn sec sm" id="ro">Tải lại đơn hàng</button></p>':"")+(oo.length?`<div class="tw"><table><thead><tr><th>Mã</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng</th>${SB.on?"<th>Trạng thái</th>":""}</tr></thead><tbody>${oo.map(o=>`<tr><td>${esc(o.id)}<br><small>${esc(o.time)}</small></td><td>${esc(o.name)}<br>${esc(o.phone)}<br><small>${esc(o.addr)}</small>${o.note?`<br><small>Ghi chú: ${esc(o.note)}</small>`:""}</td><td>${o.items.map(esc).join("<br>")}</td><td>${vnd(o.total)}</td>${SB.on?`<td><select data-st="${o.rid}" aria-label="Trạng thái đơn">${["Mới","Đã gọi","Đang giao","Hoàn thành","Hủy"].map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></td>`:""}</tr>`).join("")}</tbody></table></div>`:"<p>Chưa có đơn hàng nào.</p>");
 if($("#ro"))$("#ro").onclick=()=>{OD=null;draw()};

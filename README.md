@@ -55,3 +55,7 @@ Mỗi sản phẩm có link dạng /p/12-ten-san-pham (api/p.js + chi-tiet.html)
 Trang /game có 4 game chạy ngay trong trình duyệt, miễn phí, không cần máy chủ: lật hình, rắn săn mồi, 2048, cờ ca-rô.
 Mỗi game gồm một file .html và một file .js cùng tên trong thư mục game/. Điểm cao lưu trên máy người chơi (localStorage).
 Muốn thêm game mới: copy một cặp file, sửa nội dung, rồi thêm thẻ vào game/index.html và dòng vào sitemap.xml.
+
+## Đặt hàng theo ảnh và Hoàn tiền Shopee
+Cần chạy file supabase-tinh-nang-moi.sql một lần trong Supabase. Khách dùng trang /dat-theo-anh và /hoan-tien-shopee; bạn xử lý ở trang quản trị, tab "Đặt theo ảnh" và "Hoàn tiền Shopee".
+Cấu hình trong js/config.js: cashbackPercent (tỷ lệ hoàn cho khách) và shopeeDeeplink (không bắt buộc, mẫu link tiếp thị liên kết có {url} và {sub}).
