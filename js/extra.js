@@ -132,6 +132,10 @@
     if (!/^https:\/\//.test(t) || t.indexOf("{url}") < 0) return "";
     return t.split("{url}").join(encodeURIComponent(link)).split("{sub}").join(encodeURIComponent(code));
   }
+  function autoLink(code, phone) { /* hỏi máy chủ link tiếp thị của khách (máy chủ giữ khóa Shopee) */
+    return fetch("/api/aff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code, phone: phone }) })
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { return j && j.link ? j.link : ""; }, function () { return ""; });
+  }
   var LABEL = { "Mới": "Đã tiếp nhận yêu cầu", "Đã gửi link": "Đã có link mua hàng", "Khách báo đã mua": "Đã nhận thông tin đơn hàng, chờ Shopee đối soát", "Chờ đối soát": "Đang chờ Shopee đối soát hoa hồng", "Đã có hoa hồng": "Shopee đã xác nhận, chờ chuyển tiền cho bạn", "Đã hoàn tiền": "Đã hoàn tiền", "Không đủ điều kiện": "Không đủ điều kiện hoàn tiền" };
   function openBtn(url) { return '<a class="btn" href="' + esc(url) + '" target="_blank" rel="noopener sponsored nofollow">Mở Shopee để mua</a>'; }
 
@@ -158,6 +162,7 @@
         if (!done) throw new Error("code");
         hook({ id: code, name: name, phone: phone, addr: "(Hoàn tiền Shopee)", note: "Yêu cầu hoàn tiền Shopee", total: 0, items: ["[Hoàn tiền Shopee] " + link] });
         var aff = affLink(link, code);
+        if (!aff && C.shopeeAuto) { msg(out, "✅ Đã tạo yêu cầu. <b>Mã của bạn: " + code + "</b>. Đang tạo link mua hàng cho bạn…"); aff = await autoLink(code, phone); }
         msg(out, "✅ Đã tạo yêu cầu. <b>Mã của bạn: " + code + "</b> (hãy lưu lại cùng số điện thoại để tra cứu).<br>" +
           (aff ? "Bấm nút dưới đây để mở Shopee và mua hàng <b>ngay trong lần bấm này</b>:<br><br>" + openBtn(aff)
                : "Chúng tôi sẽ gửi <b>link mua hàng riêng</b> cho bạn qua điện thoại hoặc Zalo. Bạn cũng có thể tra cứu bằng mã ở mục 3 bên dưới."));
@@ -190,7 +195,9 @@
         var r = await api("/rest/v1/rpc/cashback_lookup", { json: { p_code: field(f, "code", 20).toUpperCase(), p_phone: field(f, "phone", 15) } });
         var rows = r.ok ? await r.json() : [];
         if (!rows.length) return msg(out, "Không tìm thấy yêu cầu khớp mã và số điện thoại. Bạn kiểm tra lại giúp nhé.", true);
-        var x = rows[0], link = x.aff_link || affLink(x.shopee_link, x.code), h = "<b>Mã " + esc(x.code) + "</b><br>Tình trạng: <b>" + esc(LABEL[x.status] || x.status) + "</b>";
+        var x = rows[0], link = x.aff_link || affLink(x.shopee_link, x.code);
+        if (!link && C.shopeeAuto && (x.status === "Mới" || x.status === "Đã gửi link")) link = await autoLink(x.code, field(f, "phone", 15));
+        var h = "<b>Mã " + esc(x.code) + "</b><br>Tình trạng: <b>" + esc(LABEL[x.status] || x.status) + "</b>";
         if (x.order_id) h += "<br>Mã đơn Shopee: " + esc(x.order_id);
         if (x.cashback > 0) h += "<br>Số tiền hoàn cho bạn: <b>" + vnd(x.cashback) + "</b> (" + x.percent + "% hoa hồng)";
         if (x.paid_at) h += "<br>Đã chuyển ngày " + new Date(x.paid_at).toLocaleDateString("vi-VN");

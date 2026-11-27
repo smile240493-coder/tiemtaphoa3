@@ -59,3 +59,8 @@ Muốn thêm game mới: copy một cặp file, sửa nội dung, rồi thêm th
 ## Đặt hàng theo ảnh và Hoàn tiền Shopee
 Cần chạy file supabase-tinh-nang-moi.sql một lần trong Supabase. Khách dùng trang /dat-theo-anh và /hoan-tien-shopee; bạn xử lý ở trang quản trị, tab "Đặt theo ảnh" và "Hoàn tiền Shopee".
 Cấu hình trong js/config.js: cashbackPercent (tỷ lệ hoàn cho khách) và shopeeDeeplink (không bắt buộc, mẫu link tiếp thị liên kết có {url} và {sub}).
+
+## Tự động đổi link Shopee thành link tiếp thị của cửa hàng
+Hàm api/aff.js gọi Shopee Affiliate Open API (generateShortLink). Cần AppID và Secret đã được Shopee cấp quyền Open API.
+Đặt hai biến SHOPEE_APP_ID và SHOPEE_SECRET trong Vercel (Settings, Environment Variables), rồi Redeploy. KHÔNG ghi chúng vào mã nguồn.
+Sau đó bật shopeeAuto: true trong js/config.js và chạy lại file supabase-tinh-nang-moi.sql một lần.
