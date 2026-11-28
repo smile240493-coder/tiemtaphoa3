@@ -31,7 +31,7 @@ async function canonical(link) {
   let u = new URL(link);
   for (let hop = 0; hop < 5; hop++) {
     if (u.protocol !== "https:" || !okHost(u.hostname)) throw new Error("host");
-    const m = u.pathname.match(/-i\.(\d{1,12})\.(\d{1,15})(?:\/|$)/) || u.pathname.match(/\/product\/(\d{1,12})\/(\d{1,15})(?:\/|$)/);
+    const m = u.pathname.match(/-i\.(\d{1,12})\.(\d{1,15})(?:\/|$)/) || u.pathname.match(/\/product\/(\d{1,12})\/(\d{1,15})(?:\/|$)/) || u.pathname.match(/^\/[a-z]{3,12}\/(\d{1,12})\/(\d{1,15})\/?$/i);
     if (m) return "https://shopee.vn/product/" + m[1] + "/" + m[2];
     if (!SHORT_HOSTS.test(u.hostname) && !/universal-link/.test(u.pathname)) break;
     const r = await fetch(u.toString(), { redirect: "manual", headers: { "user-agent": "Mozilla/5.0" } });
