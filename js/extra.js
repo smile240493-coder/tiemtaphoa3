@@ -132,7 +132,7 @@
     try {
       var u = new URL(link);
       if (!/(^|\.)shopee\.vn$/i.test(u.hostname)) return "";
-      var m = u.pathname.match(/-i\.(\d{1,12})\.(\d{1,15})(?:\/|$)/) || u.pathname.match(/\/product\/(\d{1,12})\/(\d{1,15})(?:\/|$)/);
+      var m = u.pathname.match(/-i\.(\d{1,12})\.(\d{1,15})(?:\/|$)/) || u.pathname.match(/\/product\/(\d{1,12})\/(\d{1,15})(?:\/|$)/) || u.pathname.match(/^\/[a-z]{3,12}\/(\d{1,12})\/(\d{1,15})\/?$/i);
       return m ? "https://shopee.vn/product/" + m[1] + "/" + m[2] : "";
     } catch (e) { return ""; }
   }
