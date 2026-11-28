@@ -14,11 +14,12 @@ const getText = async u => { const r = await fetch(u, { headers: { "user-agent":
 
 async function supa() { /* địa chỉ và khóa công khai của Supabase, đọc từ js/config.js */
   const cfg = await getText(SITE + "/js/config.js");
+  const aid = (cfg.match(/shopeeAffiliateId\s*:\s*"\s*(\d{5,20})\s*"/) || [])[1] || "";
   const u = (cfg.match(/supabaseUrl\s*:\s*"([^"]*)"/) || [])[1] || "";
   const k = (cfg.match(/supabaseKey\s*:\s*"([^"]*)"/) || [])[1] || "";
   let origin = ""; try { origin = new URL(u).origin; } catch (e) {}
   if (!k || !/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(origin)) throw new Error("supabase");
-  return { origin, key: k };
+  return { origin, key: k, aff: aid };
 }
 async function rpc(s, name, args) {
   const r = await fetch(s.origin + "/rest/v1/rpc/" + name, { method: "POST", headers: { apikey: s.key, "Content-Type": "application/json" }, body: JSON.stringify(args) });
@@ -56,7 +57,6 @@ async function shortLink(app, secret, url, code) {
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return send(res, 405, { error: "method" }); }
   const APP = process.env.SHOPEE_APP_ID, SEC = process.env.SHOPEE_SECRET;
-  if (!APP || !SEC) return send(res, 501, { error: "not_configured" });
   const org = req.headers && req.headers.origin;
   if (org && org !== SITE && org !== "https://pundeptrai.top" && !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(org)) return send(res, 403, { error: "origin" });
   const ip = String((req.headers && (req.headers["x-forwarded-for"] || "")) || "").split(",")[0].trim() || "?";
@@ -68,12 +68,15 @@ module.exports = async (req, res) => {
   if (!/^HT[A-Z2-9]{6}$/.test(code) || !/^0\d{9}$/.test(phone)) return send(res, 400, { error: "input" });
   try {
     const s = await supa();
+    if (!s.aff && !(APP && SEC)) return send(res, 501, { error: "not_configured" });
     const rows = await rpc(s, "cashback_lookup", { p_code: code, p_phone: phone });
     const row = rows && rows[0];
     if (!row) return send(res, 404, { error: "not_found" });
     if (row.aff_link) return send(res, 200, { link: row.aff_link });
     const url = await canonical(row.shopee_link);
-    const link = await shortLink(APP, SEC, url, code);
+    const link = s.aff /* ưu tiên dùng mã tiếp thị liên kết của cửa hàng */
+      ? "https://s.shopee.vn/an_redir?origin_link=" + encodeURIComponent(url) + "&affiliate_id=" + s.aff + "&sub_id=" + encodeURIComponent(code)
+      : await shortLink(APP, SEC, url, code);
     try { await rpc(s, "cashback_set_aff", { p_code: code, p_phone: phone, p_aff: link }); } catch (e) {}
     return send(res, 200, { link });
   } catch (e) {

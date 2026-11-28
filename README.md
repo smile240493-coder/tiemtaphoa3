@@ -64,3 +64,8 @@ Cấu hình trong js/config.js: cashbackPercent (tỷ lệ hoàn cho khách) và
 Hàm api/aff.js gọi Shopee Affiliate Open API (generateShortLink). Cần AppID và Secret đã được Shopee cấp quyền Open API.
 Đặt hai biến SHOPEE_APP_ID và SHOPEE_SECRET trong Vercel (Settings, Environment Variables), rồi Redeploy. KHÔNG ghi chúng vào mã nguồn.
 Sau đó bật shopeeAuto: true trong js/config.js và chạy lại file supabase-tinh-nang-moi.sql một lần.
+
+## Dùng mã tiếp thị liên kết của cửa hàng (khuyên dùng, không cần khóa API)
+Điền shopeeAffiliateId (chỉ gồm chữ số) trong js/config.js. Khách dán link Shopee là tự đổi thành
+https://s.shopee.vn/an_redir?origin_link=<link sản phẩm>&affiliate_id=<ID của bạn>&sub_id=<mã HT của khách>
+Link rút gọn (s.shopee.vn) do máy chủ api/aff.js đọc ra sản phẩm rồi tạo cùng kiểu. HÃY TEST trước: bấm link, xem Shopee có ghi nhận lượt bấm kèm sub_id không.

@@ -127,11 +127,23 @@
       return h === "shopee.vn" || /\.shopee\.vn$/.test(h) || h === "shp.ee" || /\.shp\.ee$/.test(h);
     } catch (e) { return false; }
   }
+  /* Lấy mã cửa hàng và mã sản phẩm từ link Shopee; trả về link gọn, bỏ phần theo dõi của người khác */
+  function productUrl(link) {
+    try {
+      var u = new URL(link);
+      if (!/(^|\.)shopee\.vn$/i.test(u.hostname)) return "";
+      var m = u.pathname.match(/-i\.(\d{1,12})\.(\d{1,15})(?:\/|$)/) || u.pathname.match(/\/product\/(\d{1,12})\/(\d{1,15})(?:\/|$)/);
+      return m ? "https://shopee.vn/product/" + m[1] + "/" + m[2] : "";
+    } catch (e) { return ""; }
+  }
   function affLink(link, code) {
     var t = C.shopeeDeeplink || "";
-    if (!/^https:\/\//.test(t) || t.indexOf("{url}") < 0) return "";
-    return t.split("{url}").join(encodeURIComponent(link)).split("{sub}").join(encodeURIComponent(code));
+    if (/^https:\/\//.test(t) && t.indexOf("{url}") >= 0) return t.split("{url}").join(encodeURIComponent(link)).split("{sub}").join(encodeURIComponent(code));
+    var id = String(C.shopeeAffiliateId || "").trim(), p = productUrl(link); /* dùng mã tiếp thị liên kết của cửa hàng */
+    if (!/^\d{5,20}$/.test(id) || !p) return "";
+    return "https://s.shopee.vn/an_redir?origin_link=" + encodeURIComponent(p) + "&affiliate_id=" + id + "&sub_id=" + encodeURIComponent(code);
   }
+  var AUTO = !!(C.shopeeAuto || /^\d{5,20}$/.test(String(C.shopeeAffiliateId || "").trim()));
   function autoLink(code, phone) { /* hỏi máy chủ link tiếp thị của khách (máy chủ giữ khóa Shopee) */
     return fetch("/api/aff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code, phone: phone }) })
       .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { return j && j.link ? j.link : ""; }, function () { return ""; });
@@ -162,7 +174,7 @@
         if (!done) throw new Error("code");
         hook({ id: code, name: name, phone: phone, addr: "(Hoàn tiền Shopee)", note: "Yêu cầu hoàn tiền Shopee", total: 0, items: ["[Hoàn tiền Shopee] " + link] });
         var aff = affLink(link, code);
-        if (!aff && C.shopeeAuto) { msg(out, "✅ Đã tạo yêu cầu. <b>Mã của bạn: " + code + "</b>. Đang tạo link mua hàng cho bạn…"); aff = await autoLink(code, phone); }
+        if (!aff && AUTO) { msg(out, "✅ Đã tạo yêu cầu. <b>Mã của bạn: " + code + "</b>. Đang tạo link mua hàng cho bạn…"); aff = await autoLink(code, phone); }
         msg(out, "✅ Đã tạo yêu cầu. <b>Mã của bạn: " + code + "</b> (hãy lưu lại cùng số điện thoại để tra cứu).<br>" +
           (aff ? "Bấm nút dưới đây để mở Shopee và mua hàng <b>ngay trong lần bấm này</b>:<br><br>" + openBtn(aff)
                : "Chúng tôi sẽ gửi <b>link mua hàng riêng</b> cho bạn qua điện thoại hoặc Zalo. Bạn cũng có thể tra cứu bằng mã ở mục 3 bên dưới."));
@@ -196,7 +208,7 @@
         var rows = r.ok ? await r.json() : [];
         if (!rows.length) return msg(out, "Không tìm thấy yêu cầu khớp mã và số điện thoại. Bạn kiểm tra lại giúp nhé.", true);
         var x = rows[0], link = x.aff_link || affLink(x.shopee_link, x.code);
-        if (!link && C.shopeeAuto && (x.status === "Mới" || x.status === "Đã gửi link")) link = await autoLink(x.code, field(f, "phone", 15));
+        if (!link && AUTO && (x.status === "Mới" || x.status === "Đã gửi link")) link = await autoLink(x.code, field(f, "phone", 15));
         var h = "<b>Mã " + esc(x.code) + "</b><br>Tình trạng: <b>" + esc(LABEL[x.status] || x.status) + "</b>";
         if (x.order_id) h += "<br>Mã đơn Shopee: " + esc(x.order_id);
         if (x.cashback > 0) h += "<br>Số tiền hoàn cho bạn: <b>" + vnd(x.cashback) + "</b> (" + x.percent + "% hoa hồng)";
